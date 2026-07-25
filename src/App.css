@@ -510,6 +510,16 @@ textarea {
   font-weight: 750;
 }
 
+.page-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: #566174;
+  font-size: 12px;
+  font-weight: 750;
+}
+
 .visually-hidden {
   position: absolute;
   width: 1px;

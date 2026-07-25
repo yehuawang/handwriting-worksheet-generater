@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
-  createWorksheetPageModel,
+  createWorksheetDocumentModel,
   DEFAULT_WORKSHEET_SETTINGS,
   getFontSizeForWritingHeight,
   type GuidelineMode,
@@ -37,6 +37,7 @@ function App() {
   const [showCalibration, setShowCalibration] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [activePageIndex, setActivePageIndex] = useState(0);
 
   useEffect(() => {
     void loadPatrickHandFont()
@@ -70,15 +71,21 @@ function App() {
       )
     : effectiveSettings.guidelines.writingHeightMm;
 
-  const pageModel = useMemo(() => {
+  const worksheetDocument = useMemo(() => {
     if (!worksheetFont) {
       return null;
     }
 
-    return createWorksheetPageModel(sourceText, effectiveSettings, (text) =>
+    return createWorksheetDocumentModel(sourceText, effectiveSettings, (text) =>
       worksheetFont.font.getAdvanceWidth(text, fontSizeMm),
     );
   }, [effectiveSettings, fontSizeMm, sourceText, worksheetFont]);
+
+  const currentPageIndex = Math.min(
+    activePageIndex,
+    Math.max(0, (worksheetDocument?.pages.length ?? 1) - 1),
+  );
+  const pageModel = worksheetDocument?.pages[currentPageIndex] ?? null;
 
   async function handleTextFile(file: File | undefined): Promise<void> {
     if (!file) {
@@ -96,7 +103,7 @@ function App() {
   }
 
   async function handleExport(): Promise<void> {
-    if (!worksheetFont || !pageModel) {
+    if (!worksheetFont || !worksheetDocument) {
       return;
     }
 
@@ -106,7 +113,7 @@ function App() {
     try {
       const { exportWorksheetPdf } = await import("./renderers/pdf");
       await exportWorksheetPdf({
-        model: pageModel,
+        worksheet: worksheetDocument,
         worksheetFont,
         fontSizeMm,
         textColor,
@@ -357,7 +364,7 @@ function App() {
               onClick={() => void handleExport()}
             >
               <DownloadIcon />
-              {isExporting ? "Creating PDF…" : "Download first-page PDF"}
+              {isExporting ? "Creating PDF…" : "Download PDF"}
             </button>
             <p>
               PDF dimensions use physical millimetres and embedded font data.
@@ -369,7 +376,7 @@ function App() {
           <div className="preview-toolbar">
             <div>
               <span className="eyebrow">Live preview</span>
-              <h2 id="preview-title">First worksheet page</h2>
+              <h2 id="preview-title">Worksheet pages</h2>
             </div>
             {pageModel ? (
               <div className="page-summary" aria-label="Page summary">
@@ -378,6 +385,10 @@ function App() {
                   {Math.round(pageModel.pageSize.heightMm)} mm
                 </span>
                 <span>{pageModel.rows.length} rows</span>
+                <span>
+                  Page {currentPageIndex + 1} of{" "}
+                  {worksheetDocument?.pages.length ?? 1}
+                </span>
               </div>
             ) : null}
           </div>
@@ -385,8 +396,9 @@ function App() {
           <StatusMessages
             fontError={fontError}
             exportError={exportError}
-            omittedSourceLineCount={pageModel?.omittedSourceLineCount ?? 0}
-            horizontalOverflowCount={pageModel?.horizontalOverflowCount ?? 0}
+            horizontalOverflowCount={
+              worksheetDocument?.horizontalOverflowCount ?? 0
+            }
           />
 
           <div className="preview-stage">
@@ -406,6 +418,41 @@ function App() {
               </div>
             )}
           </div>
+
+          {worksheetDocument && worksheetDocument.pages.length > 1 ? (
+            <nav className="page-navigation" aria-label="Preview pages">
+              <button
+                className="secondary-button compact-button"
+                type="button"
+                disabled={currentPageIndex === 0}
+                onClick={() =>
+                  setActivePageIndex(Math.max(0, currentPageIndex - 1))
+                }
+              >
+                Previous
+              </button>
+              <span>
+                Page {currentPageIndex + 1} of {worksheetDocument.pages.length}
+              </span>
+              <button
+                className="secondary-button compact-button"
+                type="button"
+                disabled={
+                  currentPageIndex === worksheetDocument.pages.length - 1
+                }
+                onClick={() =>
+                  setActivePageIndex(
+                    Math.min(
+                      worksheetDocument.pages.length - 1,
+                      currentPageIndex + 1,
+                    ),
+                  )
+                }
+              >
+                Next
+              </button>
+            </nav>
+          ) : null}
 
           {worksheetFont ? (
             <div className="font-metrics">
@@ -445,22 +492,17 @@ function App() {
 function StatusMessages({
   fontError,
   exportError,
-  omittedSourceLineCount,
   horizontalOverflowCount,
 }: {
   readonly fontError: string | null;
   readonly exportError: string | null;
-  readonly omittedSourceLineCount: number;
   readonly horizontalOverflowCount: number;
 }) {
   const messages = [
     fontError,
     exportError,
-    omittedSourceLineCount > 0
-      ? `${omittedSourceLineCount} source line${omittedSourceLineCount === 1 ? "" : "s"} will continue beyond this prototype page.`
-      : null,
     horizontalOverflowCount > 0
-      ? `${horizontalOverflowCount} line${horizontalOverflowCount === 1 ? "" : "s"} exceed the printable width. Wrapping is planned for the next iteration.`
+      ? `${horizontalOverflowCount} line${horizontalOverflowCount === 1 ? "" : "s"} could not fit within the printable width.`
       : null,
   ].filter((message): message is string => Boolean(message));
 

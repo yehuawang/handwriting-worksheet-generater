@@ -23,7 +23,7 @@ The roadmap communicates direction rather than promising dates. Priorities may c
 
 ## Milestone 2 — Usable Worksheet Generator
 
-- Paginated preview and PDF export.
+- [x] Paginated preview and PDF export with indentation-aware wrapping.
 - Built-in open-licensed handwriting fonts.
 - Custom font upload and validation.
 - Practice rows.

@@ -9,7 +9,7 @@ import {
   type PageSize,
   type PaperSizeName,
 } from "./page";
-import { getSourceLines } from "./text";
+import { getSourceLines, wrapTextLine } from "./text";
 
 export interface WorksheetSettings {
   readonly paper: PaperSizeName;
@@ -23,6 +23,7 @@ export interface WorksheetSettings {
 export interface WorksheetRow {
   readonly id: string;
   readonly sourceLineIndex: number;
+  readonly continuationIndex: number;
   readonly kind: "example" | "practice";
   readonly text: string;
   readonly topYmm: number;
@@ -32,13 +33,26 @@ export interface WorksheetRow {
 }
 
 export interface WorksheetPageModel {
+  readonly pageNumber: number;
   readonly pageSize: PageSize;
   readonly contentWidthMm: number;
   readonly contentHeightMm: number;
   readonly guidelineGeometry: GuidelineGeometry;
   readonly rows: readonly WorksheetRow[];
-  readonly omittedSourceLineCount: number;
   readonly horizontalOverflowCount: number;
+}
+
+export interface WorksheetDocumentModel {
+  readonly pages: readonly WorksheetPageModel[];
+  readonly sourceLineCount: number;
+  readonly wrappedLineCount: number;
+  readonly horizontalOverflowCount: number;
+}
+
+interface LayoutTextLine {
+  readonly sourceLineIndex: number;
+  readonly continuationIndex: number;
+  readonly text: string;
 }
 
 export type MeasureText = (text: string) => number;
@@ -58,11 +72,11 @@ export const DEFAULT_WORKSHEET_SETTINGS: WorksheetSettings = {
   },
 };
 
-export function createWorksheetPageModel(
+export function createWorksheetDocumentModel(
   sourceText: string,
   settings: WorksheetSettings,
   measureText: MeasureText,
-): WorksheetPageModel {
+): WorksheetDocumentModel {
   validateSettings(settings);
 
   const pageSize = getOrientedPageSize(settings.paper, settings.orientation);
@@ -70,29 +84,41 @@ export function createWorksheetPageModel(
   const contentHeightMm = pageSize.heightMm - settings.marginMm * 2;
   const guidelineGeometry = createGuidelineGeometry(settings.guidelines);
   const sourceLines = getSourceLines(sourceText, settings.tabWidth);
-  const rows: WorksheetRow[] = [];
+  const layoutLines: LayoutTextLine[] = sourceLines.flatMap(
+    (sourceLine, sourceLineIndex) =>
+      wrapTextLine(sourceLine, contentWidthMm, measureText).map(
+        ({ text, continuationIndex }) => ({
+          sourceLineIndex,
+          continuationIndex,
+          text,
+        }),
+      ),
+  );
+  const pageRows: WorksheetRow[][] = [[]];
   let cursorYmm = settings.marginMm;
-  let consumedSourceLines = 0;
 
-  for (const [sourceLineIndex, text] of sourceLines.entries()) {
-    const practiceRowsForLine = text.length > 0 ? settings.practiceRows : 0;
+  for (const line of layoutLines) {
+    const practiceRowsForLine =
+      line.text.length > 0 ? settings.practiceRows : 0;
     const rowsRequired = 1 + practiceRowsForLine;
     const groupHeightMm =
       guidelineGeometry.rowHeightMm * rowsRequired +
       settings.guidelines.rowGapMm * (rowsRequired - 1);
 
-    if (cursorYmm + groupHeightMm > pageSize.heightMm - settings.marginMm) {
-      break;
+    if (
+      cursorYmm + groupHeightMm > pageSize.heightMm - settings.marginMm &&
+      pageRows[pageRows.length - 1].length > 0
+    ) {
+      pageRows.push([]);
+      cursorYmm = settings.marginMm;
     }
 
-    rows.push(
+    pageRows[pageRows.length - 1].push(
       createRow(
-        `source-${sourceLineIndex}`,
-        sourceLineIndex,
+        line,
         "example",
-        text,
+        line.text,
         cursorYmm,
-        settings.marginMm,
         contentWidthMm,
         guidelineGeometry,
         measureText,
@@ -101,14 +127,12 @@ export function createWorksheetPageModel(
     cursorYmm += guidelineGeometry.rowPitchMm;
 
     if (practiceRowsForLine === 1) {
-      rows.push(
+      pageRows[pageRows.length - 1].push(
         createRow(
-          `practice-${sourceLineIndex}`,
-          sourceLineIndex,
+          line,
           "practice",
           "",
           cursorYmm,
-          settings.marginMm,
           contentWidthMm,
           guidelineGeometry,
           measureText,
@@ -116,30 +140,40 @@ export function createWorksheetPageModel(
       );
       cursorYmm += guidelineGeometry.rowPitchMm;
     }
-
-    consumedSourceLines += 1;
   }
 
-  return {
-    pageSize,
-    contentWidthMm,
-    contentHeightMm,
-    guidelineGeometry,
-    rows,
-    omittedSourceLineCount: sourceLines.length - consumedSourceLines,
-    horizontalOverflowCount: rows.filter(
+  const pages = pageRows.map((rows, index): WorksheetPageModel => {
+    const horizontalOverflowCount = rows.filter(
       ({ overflowsHorizontally }) => overflowsHorizontally,
-    ).length,
+    ).length;
+
+    return {
+      pageNumber: index + 1,
+      pageSize,
+      contentWidthMm,
+      contentHeightMm,
+      guidelineGeometry,
+      rows,
+      horizontalOverflowCount,
+    };
+  });
+
+  return {
+    pages,
+    sourceLineCount: sourceLines.length,
+    wrappedLineCount: layoutLines.length,
+    horizontalOverflowCount: pages.reduce(
+      (total, page) => total + page.horizontalOverflowCount,
+      0,
+    ),
   };
 }
 
 function createRow(
-  id: string,
-  sourceLineIndex: number,
+  line: LayoutTextLine,
   kind: WorksheetRow["kind"],
   text: string,
   topYmm: number,
-  leftXmm: number,
   contentWidthMm: number,
   geometry: GuidelineGeometry,
   measureText: MeasureText,
@@ -147,14 +181,15 @@ function createRow(
   const textWidthMm = text.length > 0 ? measureText(text) : 0;
 
   return {
-    id,
-    sourceLineIndex,
+    id: `${kind}-${line.sourceLineIndex}-${line.continuationIndex}`,
+    sourceLineIndex: line.sourceLineIndex,
+    continuationIndex: line.continuationIndex,
     kind,
     text,
     topYmm,
     baselineYmm: topYmm + geometry.writingHeightMm,
     textWidthMm,
-    overflowsHorizontally: leftXmm + textWidthMm > leftXmm + contentWidthMm,
+    overflowsHorizontally: textWidthMm > contentWidthMm,
   };
 }
 
@@ -169,5 +204,13 @@ function validateSettings(settings: WorksheetSettings): void {
     settings.marginMm * 2 >= pageSize.heightMm
   ) {
     throw new RangeError("Margins must leave a printable page area.");
+  }
+
+  const geometry = createGuidelineGeometry(settings.guidelines);
+  if (
+    geometry.rowHeightMm * (1 + settings.practiceRows) >
+    pageSize.heightMm - settings.marginMm * 2
+  ) {
+    throw new RangeError("The selected row geometry does not fit on the page.");
   }
 }

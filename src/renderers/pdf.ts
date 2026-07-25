@@ -2,11 +2,11 @@ import fontkit from "@pdf-lib/fontkit";
 import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 
 import { millimetresToPoints } from "../core/units";
-import type { WorksheetPageModel } from "../core/worksheet";
+import type { WorksheetDocumentModel } from "../core/worksheet";
 import type { LoadedWorksheetFont } from "../fonts/patrick-hand";
 
 interface ExportWorksheetPdfOptions {
-  readonly model: WorksheetPageModel;
+  readonly worksheet: WorksheetDocumentModel;
   readonly worksheetFont: LoadedWorksheetFont;
   readonly fontSizeMm: number;
   readonly textColor: string;
@@ -27,7 +27,7 @@ const LINE_COLORS = {
 } as const;
 
 export async function createWorksheetPdfBytes({
-  model,
+  worksheet,
   worksheetFont,
   fontSizeMm,
   textColor,
@@ -39,54 +39,56 @@ export async function createWorksheetPdfBytes({
   const embeddedFont = await pdf.embedFont(worksheetFont.bytes, {
     subset: true,
   });
-  const pageWidthPoints = millimetresToPoints(model.pageSize.widthMm);
-  const pageHeightPoints = millimetresToPoints(model.pageSize.heightMm);
-  const page = pdf.addPage([pageWidthPoints, pageHeightPoints]);
-  const contentLeftMm = (model.pageSize.widthMm - model.contentWidthMm) / 2;
-  const contentRightMm = contentLeftMm + model.contentWidthMm;
+  for (const model of worksheet.pages) {
+    const pageWidthPoints = millimetresToPoints(model.pageSize.widthMm);
+    const pageHeightPoints = millimetresToPoints(model.pageSize.heightMm);
+    const page = pdf.addPage([pageWidthPoints, pageHeightPoints]);
+    const contentLeftMm = (model.pageSize.widthMm - model.contentWidthMm) / 2;
+    const contentRightMm = contentLeftMm + model.contentWidthMm;
 
-  for (const row of model.rows) {
-    for (const guideline of model.guidelineGeometry.guidelines) {
-      const yMm = row.topYmm + guideline.yMm;
-      const color = hexToRgb(LINE_COLORS[guideline.kind]);
+    for (const row of model.rows) {
+      for (const guideline of model.guidelineGeometry.guidelines) {
+        const yMm = row.topYmm + guideline.yMm;
+        const color = hexToRgb(LINE_COLORS[guideline.kind]);
 
-      page.drawLine({
-        start: {
+        page.drawLine({
+          start: {
+            x: millimetresToPoints(contentLeftMm),
+            y: pageHeightPoints - millimetresToPoints(yMm),
+          },
+          end: {
+            x: millimetresToPoints(contentRightMm),
+            y: pageHeightPoints - millimetresToPoints(yMm),
+          },
+          thickness: 0.5,
+          color,
+          opacity: 0.9,
+          ...(guideline.kind === "x-height"
+            ? { dashArray: [4, 4], dashPhase: 0 }
+            : {}),
+        });
+      }
+
+      if (row.kind === "example" && row.text.length > 0) {
+        page.drawText(row.text, {
           x: millimetresToPoints(contentLeftMm),
-          y: pageHeightPoints - millimetresToPoints(yMm),
-        },
-        end: {
-          x: millimetresToPoints(contentRightMm),
-          y: pageHeightPoints - millimetresToPoints(yMm),
-        },
-        thickness: 0.5,
-        color,
-        opacity: 0.9,
-        ...(guideline.kind === "x-height"
-          ? { dashArray: [4, 4], dashPhase: 0 }
-          : {}),
-      });
+          y: pageHeightPoints - millimetresToPoints(row.baselineYmm),
+          size: millimetresToPoints(fontSizeMm),
+          font: embeddedFont,
+          color: hexToRgb(textColor),
+        });
+      }
     }
 
-    if (row.kind === "example" && row.text.length > 0) {
-      page.drawText(row.text, {
-        x: millimetresToPoints(contentLeftMm),
-        y: pageHeightPoints - millimetresToPoints(row.baselineYmm),
-        size: millimetresToPoints(fontSizeMm),
-        font: embeddedFont,
-        color: hexToRgb(textColor),
-      });
+    if (showCalibration) {
+      drawCalibrationMark(
+        page,
+        pageHeightPoints,
+        contentLeftMm,
+        model.pageSize.heightMm,
+        embeddedFont,
+      );
     }
-  }
-
-  if (showCalibration) {
-    drawCalibrationMark(
-      page,
-      pageHeightPoints,
-      contentLeftMm,
-      model.pageSize.heightMm,
-      embeddedFont,
-    );
   }
 
   return pdf.save();

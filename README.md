@@ -113,23 +113,23 @@ Desktop application bundles are platform-specific. Build Windows installers on W
 
 ## Using the Software
 
-The current printable prototype supports one worksheet page:
+The current printable prototype supports multi-page worksheets:
 
 1. Start the web or desktop development application.
 2. Select **Import .txt** to load a plain-text file, or edit the text directly.
 3. Choose baseline-only, three-line, or four-line guidelines.
 4. Set the writing height, gap between rows, example color, and optional practice rows.
 5. Choose US Letter or A4 in portrait or landscape orientation.
-6. Review the live first-page preview.
-7. Select **Download first-page PDF**.
+6. Review each page with the preview navigation.
+7. Select **Download PDF** to export the complete worksheet.
 8. Print the PDF using **Actual size** or **100% scale**.
 9. If the calibration mark is enabled, verify that it measures exactly 50 mm with a ruler.
 
-The prototype preserves line breaks, blank lines, leading spaces, and tabs. It reports content that exceeds the first page or printable width. Automatic wrapping, pagination, headers, footers, custom fonts, and saved presets remain planned work.
+The prototype preserves line breaks, blank lines, leading spaces, and tabs. Long lines wrap within the printable area, retaining their indentation, and example/practice row pairs stay together across page boundaries. Headers, footers, custom fonts, and saved presets remain planned work.
 
 ## Project Status
 
-The first printable prototype is implemented. It imports text, calculates font-aware guideline geometry, displays a live first-page preview, and exports a physically sized PDF with an embedded open-licensed handwriting font. Multi-page layout and the remaining product controls are under development.
+The printable prototype is implemented. It imports text, calculates font-aware guideline geometry, provides a paginated live preview, and exports a physically sized multi-page PDF with an embedded open-licensed handwriting font. The remaining product controls are under development.
 
 ## Contributing
 

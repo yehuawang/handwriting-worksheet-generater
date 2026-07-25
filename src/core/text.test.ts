@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { expandTabs, getSourceLines, normalizePlainText } from "./text";
+import {
+  expandTabs,
+  getSourceLines,
+  normalizePlainText,
+  wrapTextLine,
+} from "./text";
 
 describe("plain-text normalization", () => {
   it("normalizes a BOM and Windows line endings", () => {
@@ -18,6 +23,32 @@ describe("plain-text normalization", () => {
       "  first",
       "",
       "    second",
+    ]);
+  });
+});
+
+describe("line wrapping", () => {
+  const measureText = (text: string) => text.length;
+
+  it("leaves a fitting line unchanged", () => {
+    expect(wrapTextLine("Short line", 20, measureText)).toEqual([
+      { text: "Short line", continuationIndex: 0 },
+    ]);
+  });
+
+  it("preserves indentation on wrapped continuations", () => {
+    expect(wrapTextLine("  alpha beta gamma", 10, measureText)).toEqual([
+      { text: "  alpha", continuationIndex: 0 },
+      { text: "  beta", continuationIndex: 1 },
+      { text: "  gamma", continuationIndex: 2 },
+    ]);
+  });
+
+  it("breaks a word when no whitespace fits", () => {
+    expect(wrapTextLine("abcdefgh", 3, measureText)).toEqual([
+      { text: "abc", continuationIndex: 0 },
+      { text: "def", continuationIndex: 1 },
+      { text: "gh", continuationIndex: 2 },
     ]);
   });
 });

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import opentype from "opentype.js";
 
 import {
-  createWorksheetPageModel,
+  createWorksheetDocumentModel,
   DEFAULT_WORKSHEET_SETTINGS,
   extractFontMetrics,
   getFontSizeForWritingHeight,
@@ -20,12 +20,11 @@ const fontPath = resolve(
 );
 const outputDirectory = resolve(projectRoot, "tmp/pdfs");
 const outputPath = resolve(outputDirectory, "printable-prototype.pdf");
-const sourceText = `Handwriting practice
-  Indented words stay indented.
-
-Tall letters reach the top: b d f h k l t
-Round letters sit in the middle: a c e o
-Descending letters reach below: g j p q y`;
+const sourceText = Array.from(
+  { length: 28 },
+  (_, index) =>
+    `  Practice line ${index + 1}: Tall letters b d f h k l t, round letters a c e o, and descending letters g j p q y.`,
+).join("\n");
 
 const fontBytes = await readFile(fontPath);
 const buffer = fontBytes.buffer.slice(
@@ -52,11 +51,11 @@ const fontSizeMm = getFontSizeForWritingHeight(
   settings.guidelines.writingHeightMm,
   metrics,
 );
-const model = createWorksheetPageModel(sourceText, settings, (text) =>
+const worksheet = createWorksheetDocumentModel(sourceText, settings, (text) =>
   font.getAdvanceWidth(text, fontSizeMm),
 );
 const pdfBytes = await createWorksheetPdfBytes({
-  model,
+  worksheet,
   worksheetFont,
   fontSizeMm,
   textColor: "#475569",
