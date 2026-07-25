@@ -1,5 +1,11 @@
 import fontkit from "@pdf-lib/fontkit";
-import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import {
+  PDFDocument,
+  rgb,
+  StandardFonts,
+  type PDFFont,
+  type PDFPage,
+} from "pdf-lib";
 
 import { millimetresToPoints } from "../core/units";
 import type { WorksheetDocumentModel } from "../core/worksheet";
@@ -37,6 +43,7 @@ export async function createWorksheetPdfBytes({
   pdf.registerFontkit(fontkit);
 
   const embeddedFont = await pdf.embedFont(worksheetFont.bytes);
+  const pageLabelFont = await pdf.embedFont(StandardFonts.Helvetica);
   for (const model of worksheet.pages) {
     const pageWidthPoints = millimetresToPoints(model.pageSize.widthMm);
     const pageHeightPoints = millimetresToPoints(model.pageSize.heightMm);
@@ -44,7 +51,7 @@ export async function createWorksheetPdfBytes({
     const contentLeftMm = model.contentLeftMm;
     const contentRightMm = contentLeftMm + model.contentWidthMm;
 
-    drawPageLabels(page, pageHeightPoints, model, embeddedFont, textColor);
+    drawPageLabels(page, pageHeightPoints, model, pageLabelFont, textColor);
 
     for (const row of model.rows) {
       for (const guideline of model.guidelineGeometry.guidelines) {
@@ -101,38 +108,39 @@ function drawPageLabels(
   font: PDFFont,
   textColor: string,
 ): void {
-  const size = millimetresToPoints(3);
   const color = hexToRgb(textColor);
   const { labels } = model;
+  const headerSize = millimetresToPoints(labels.headerFontSizeMm);
+  const footerSize = millimetresToPoints(labels.footerFontSizeMm);
 
   if (labels.headerLeft) {
     page.drawText(labels.headerLeft, {
       x: millimetresToPoints(model.contentLeftMm),
       y: pageHeightPoints - millimetresToPoints(labels.headerBaselineYmm),
-      size,
+      size: headerSize,
       font,
       color,
     });
   }
 
   if (labels.headerRight) {
-    const width = font.widthOfTextAtSize(labels.headerRight, size);
+    const width = font.widthOfTextAtSize(labels.headerRight, headerSize);
     page.drawText(labels.headerRight, {
       x:
         millimetresToPoints(model.contentLeftMm + model.contentWidthMm) - width,
       y: pageHeightPoints - millimetresToPoints(labels.headerBaselineYmm),
-      size,
+      size: headerSize,
       font,
       color,
     });
   }
 
   if (labels.footerCenter) {
-    const width = font.widthOfTextAtSize(labels.footerCenter, size);
+    const width = font.widthOfTextAtSize(labels.footerCenter, footerSize);
     page.drawText(labels.footerCenter, {
       x: millimetresToPoints(model.pageSize.widthMm / 2) - width / 2,
       y: pageHeightPoints - millimetresToPoints(labels.footerBaselineYmm),
-      size,
+      size: footerSize,
       font,
       color,
     });

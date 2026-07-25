@@ -140,6 +140,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
+  overflow: hidden;
 }
 
 button,
@@ -166,10 +167,13 @@ textarea:focus-visible {
 }
 
 .app-shell {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 }
 
 .app-header {
+  position: relative;
+  z-index: 10;
   min-height: 76px;
   padding: 14px 24px;
   display: flex;
@@ -230,19 +234,37 @@ textarea:focus-visible {
 }
 
 .workspace {
-  min-height: calc(100vh - 76px);
+  height: calc(100vh - 76px);
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(330px, 410px) minmax(0, 1fr);
+  overflow: hidden;
 }
 
 .control-panel {
+  height: 100%;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
   background: var(--surface);
   border-right: 1px solid var(--border);
 }
 
+.control-sections {
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
 .panel-section {
-  padding: 24px;
+  padding: 18px 24px;
   border-bottom: 1px solid var(--soft-border);
+}
+
+.panel-section[data-expanded="false"] {
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
 
 .section-heading {
@@ -251,6 +273,38 @@ textarea:focus-visible {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.accordion-toggle {
+  width: 100%;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  border: 0;
+}
+
+.accordion-toggle:hover h2 {
+  color: var(--accent);
+}
+
+.accordion-chevron {
+  width: 20px;
+  height: 20px;
+  color: #7a8494;
+  transition: transform 160ms ease;
+}
+
+.accordion-chevron[data-expanded="true"] {
+  transform: rotate(180deg);
+}
+
+.panel-section-content {
+  animation: reveal-section 140ms ease-out;
+}
+
+.import-button {
+  margin-bottom: 14px;
 }
 
 .step-label,
@@ -494,7 +548,10 @@ textarea {
 }
 
 .export-area {
-  padding: 20px 24px 26px;
+  padding: 14px 24px 16px;
+  background: #ffffff;
+  border-top: 1px solid var(--soft-border);
+  box-shadow: 0 -8px 20px rgb(30 41 59 / 5%);
 }
 
 .primary-button {
@@ -534,20 +591,32 @@ textarea {
 }
 
 .preview-panel {
+  min-height: 0;
   min-width: 0;
-  padding: 24px clamp(20px, 4vw, 56px) 40px;
+  padding: 18px clamp(18px, 3vw, 44px);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  gap: 10px;
+  overflow: hidden;
   background:
     radial-gradient(circle at 75% 10%, rgb(255 255 255 / 80%), transparent 35%),
     #edf1f5;
 }
 
 .preview-toolbar {
-  max-width: 880px;
-  margin: 0 auto 18px;
+  grid-row: 1;
+  margin: 0;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
+}
+
+.preview-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .page-summary {
@@ -566,8 +635,10 @@ textarea {
 }
 
 .status-stack {
-  max-width: 880px;
-  margin: 0 auto 12px;
+  grid-row: 2;
+  max-height: 72px;
+  margin: 0;
+  overflow-y: auto;
   display: grid;
   gap: 6px;
 }
@@ -598,12 +669,11 @@ textarea {
 }
 
 .preview-stage {
-  max-width: 880px;
-  min-height: 620px;
-  margin: 0 auto;
-  padding: 26px;
-  display: grid;
-  place-items: start center;
+  grid-row: 3;
+  height: 100%;
+  margin: 0;
+  padding: 18px;
+  min-height: 0;
   overflow: auto;
   background:
     linear-gradient(45deg, rgb(31 56 67 / 2%) 25%, transparent 25%) 0 0 / 16px
@@ -616,10 +686,29 @@ textarea {
   box-shadow: inset 0 1px 3px rgb(30 41 59 / 5%);
 }
 
+.preview-canvas {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-canvas[data-zoomed="true"] {
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.preview-canvas[data-zoomed="true"] .worksheet-page {
+  margin-inline: auto;
+}
+
 .worksheet-page {
-  width: min(100%, 610px);
-  height: auto;
+  width: auto;
   display: block;
+  flex: 0 0 auto;
   background: #ffffff;
   box-shadow:
     0 2px 5px rgb(30 41 59 / 10%),
@@ -644,8 +733,8 @@ textarea {
 }
 
 .font-metrics {
-  max-width: 880px;
-  margin: 14px auto 0;
+  grid-row: 5;
+  margin: 0;
   padding: 13px 15px;
   display: flex;
   align-items: center;
@@ -688,6 +777,8 @@ textarea {
 }
 
 .page-navigation {
+  grid-row: 4;
+  min-height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -695,6 +786,90 @@ textarea {
   color: #566174;
   font-size: 12px;
   font-weight: 750;
+}
+
+.zoom-controls {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  color: #526073;
+  background: rgb(255 255 255 / 78%);
+  border: 1px solid #d5dde5;
+  border-radius: 7px;
+}
+
+.zoom-controls button {
+  height: 100%;
+  padding: 0 8px;
+  display: grid;
+  place-items: center;
+  color: #5d6a7d;
+  background: transparent;
+  border: 0;
+}
+
+.zoom-controls button:hover:not(:disabled) {
+  color: var(--accent-hover);
+  background: var(--accent-soft);
+}
+
+.zoom-controls button:disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.zoom-controls svg {
+  width: 17px;
+  height: 17px;
+}
+
+.zoom-controls .zoom-value {
+  min-width: 48px;
+  border-right: 1px solid #e0e5eb;
+  border-left: 1px solid #e0e5eb;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.drop-overlay {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  padding: 24px;
+  display: grid;
+  place-items: center;
+  color: var(--accent);
+  background: rgb(229 242 239 / 88%);
+  backdrop-filter: blur(3px);
+  pointer-events: none;
+}
+
+.drop-overlay > div {
+  min-width: min(420px, 80vw);
+  padding: 44px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 2px dashed #7eb2aa;
+  border-radius: 16px;
+  box-shadow: 0 20px 50px rgb(23 62 58 / 18%);
+}
+
+.drop-overlay svg {
+  width: 38px;
+  height: 38px;
+}
+
+.drop-overlay strong {
+  color: #244a45;
+  font-size: 17px;
+}
+
+.drop-overlay span {
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .page-arrow-button {
@@ -746,18 +921,34 @@ textarea {
   }
 }
 
+@keyframes reveal-section {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1300px) {
+  .prototype-badge,
+  .page-summary,
+  .font-metrics dl {
+    display: none;
+  }
+}
+
 @media (max-width: 900px) {
   .workspace {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(300px, 360px) minmax(400px, 1fr);
   }
 
-  .control-panel {
-    border-right: 0;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .preview-stage {
-    min-height: 480px;
+  .preview-panel {
+    padding-right: 12px;
+    padding-left: 12px;
   }
 }
 
@@ -781,16 +972,10 @@ textarea {
     grid-template-columns: 1fr;
   }
 
-  .preview-panel {
-    padding-right: 12px;
-    padding-left: 12px;
-  }
-
   .preview-stage {
     padding: 12px;
   }
 
-  .page-summary,
   .font-metrics dl {
     display: none;
   }

@@ -10,8 +10,8 @@ import {
   extractFontMetrics,
   getFontSizeForWritingHeight,
 } from "../src/core";
-import { type LoadedWorksheetFont } from "../src/fonts/worksheet-fonts";
 import { BUILT_IN_FONTS } from "../src/fonts/font-definitions";
+import type { LoadedWorksheetFont } from "../src/fonts/worksheet-fonts";
 import { createWorksheetPdfBytes } from "../src/renderers/pdf";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -45,6 +45,11 @@ for (const definition of BUILT_IN_FONTS) {
   };
   const settings = {
     ...DEFAULT_WORKSHEET_SETTINGS,
+    pageLabels: {
+      ...DEFAULT_WORKSHEET_SETTINGS.pageLabels,
+      headerFontSizeMm: 5,
+      footerFontSizeMm: 4,
+    },
     guidelines: {
       ...DEFAULT_WORKSHEET_SETTINGS.guidelines,
       xHeightRatio: metrics.xHeightRatio,
@@ -58,7 +63,7 @@ for (const definition of BUILT_IN_FONTS) {
   const worksheet = createWorksheetDocumentModel(
     sourceText,
     settings,
-    (text) => font.getAdvanceWidth(text, fontSizeMm),
+    (text) => worksheetFont.font.getAdvanceWidth(text, fontSizeMm),
     { fileName: "handwriting-practice.txt" },
   );
   const pdfBytes = await createWorksheetPdfBytes({

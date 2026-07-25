@@ -6,6 +6,7 @@ interface WorksheetPreviewProps {
   readonly fontFamily: string;
   readonly textColor: string;
   readonly showCalibration: boolean;
+  readonly zoomPercent: number;
 }
 
 const LINE_STYLES = {
@@ -21,6 +22,7 @@ export function WorksheetPreview({
   fontFamily,
   textColor,
   showCalibration,
+  zoomPercent,
 }: WorksheetPreviewProps) {
   const { pageSize, rows, guidelineGeometry } = model;
   const contentLeft = model.contentLeftMm;
@@ -29,6 +31,12 @@ export function WorksheetPreview({
   return (
     <svg
       className="worksheet-page"
+      width={pageSize.widthMm}
+      height={pageSize.heightMm}
+      style={{
+        height: `${zoomPercent}%`,
+        maxWidth: zoomPercent === 100 ? "100%" : "none",
+      }}
       viewBox={`0 0 ${pageSize.widthMm} ${pageSize.heightMm}`}
       role="img"
       aria-label={`Preview of worksheet page ${model.pageNumber}`}
@@ -52,7 +60,7 @@ export function WorksheetPreview({
         fill="#ffffff"
       />
 
-      <PageLabels model={model} fontFamily={fontFamily} textColor={textColor} />
+      <PageLabels model={model} textColor={textColor} />
 
       {rows.flatMap((row) =>
         guidelineGeometry.guidelines.map((guideline) => {
@@ -105,25 +113,27 @@ export function WorksheetPreview({
 
 function PageLabels({
   model,
-  fontFamily,
   textColor,
 }: {
   readonly model: WorksheetPageModel;
-  readonly fontFamily: string;
   readonly textColor: string;
 }) {
   const { labels, contentLeftMm, contentWidthMm } = model;
   const contentRightMm = contentLeftMm + contentWidthMm;
   const commonProps = {
     fill: textColor,
-    fontFamily,
-    fontSize: 3,
+    fontFamily: 'Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
   };
 
   return (
     <g aria-label="Page header and footer">
       {labels.headerLeft ? (
-        <text x={contentLeftMm} y={labels.headerBaselineYmm} {...commonProps}>
+        <text
+          x={contentLeftMm}
+          y={labels.headerBaselineYmm}
+          fontSize={labels.headerFontSizeMm}
+          {...commonProps}
+        >
           {labels.headerLeft}
         </text>
       ) : null}
@@ -131,6 +141,7 @@ function PageLabels({
         <text
           x={contentRightMm}
           y={labels.headerBaselineYmm}
+          fontSize={labels.headerFontSizeMm}
           textAnchor="end"
           {...commonProps}
         >
@@ -141,6 +152,7 @@ function PageLabels({
         <text
           x={model.pageSize.widthMm / 2}
           y={labels.footerBaselineYmm}
+          fontSize={labels.footerFontSizeMm}
           textAnchor="middle"
           {...commonProps}
         >

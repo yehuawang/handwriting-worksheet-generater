@@ -25,8 +25,10 @@ export interface PageLabelSettings {
   readonly showHeader: boolean;
   readonly headerLeft: string;
   readonly headerRight: string;
+  readonly headerFontSizeMm: number;
   readonly showFooter: boolean;
   readonly footerCenter: string;
+  readonly footerFontSizeMm: number;
 }
 
 export interface WorksheetMetadata {
@@ -37,6 +39,8 @@ export interface WorksheetPageLabels {
   readonly headerLeft: string;
   readonly headerRight: string;
   readonly footerCenter: string;
+  readonly headerFontSizeMm: number;
+  readonly footerFontSizeMm: number;
   readonly headerBaselineYmm: number;
   readonly footerBaselineYmm: number;
 }
@@ -92,8 +96,10 @@ export const DEFAULT_WORKSHEET_SETTINGS: WorksheetSettings = {
     showHeader: true,
     headerLeft: "{fileName}",
     headerRight: "Date: __________",
+    headerFontSizeMm: 3,
     showFooter: true,
     footerCenter: "Page {page} of {pages}",
+    footerFontSizeMm: 3,
   },
   guidelines: {
     writingHeightMm: 6,
@@ -114,14 +120,15 @@ export function createWorksheetDocumentModel(
 
   const pageSize = getOrientedPageSize(settings.paper, settings.orientation);
   const contentWidthMm = pageSize.widthMm - settings.marginMm * 2;
-  const labelReservationMm = 9;
-  const contentTopMm =
-    settings.marginMm +
-    (settings.pageLabels.showHeader ? labelReservationMm : 0);
+  const headerReservationMm = settings.pageLabels.showHeader
+    ? settings.pageLabels.headerFontSizeMm + 6
+    : 0;
+  const footerReservationMm = settings.pageLabels.showFooter
+    ? settings.pageLabels.footerFontSizeMm + 6
+    : 0;
+  const contentTopMm = settings.marginMm + headerReservationMm;
   const contentBottomMm =
-    pageSize.heightMm -
-    settings.marginMm -
-    (settings.pageLabels.showFooter ? labelReservationMm : 0);
+    pageSize.heightMm - settings.marginMm - footerReservationMm;
   const contentHeightMm = contentBottomMm - contentTopMm;
   const guidelineGeometry = createGuidelineGeometry(settings.guidelines);
   const sourceLines = getSourceLines(sourceText, settings.tabWidth);
@@ -246,8 +253,10 @@ function createPageLabels(
     footerCenter: settings.showFooter
       ? resolvePageLabel(settings.footerCenter, values)
       : "",
-    headerBaselineYmm: marginMm + 3,
-    footerBaselineYmm: pageHeightMm - marginMm + 3,
+    headerFontSizeMm: settings.headerFontSizeMm,
+    footerFontSizeMm: settings.footerFontSizeMm,
+    headerBaselineYmm: marginMm + settings.headerFontSizeMm,
+    footerBaselineYmm: pageHeightMm - marginMm - 2,
   };
 }
 
@@ -303,9 +312,22 @@ function validateSettings(settings: WorksheetSettings): void {
     geometry.rowHeightMm * (1 + settings.practiceRows) >
     pageSize.heightMm -
       settings.marginMm * 2 -
-      (settings.pageLabels.showHeader ? 9 : 0) -
-      (settings.pageLabels.showFooter ? 9 : 0)
+      (settings.pageLabels.showHeader
+        ? settings.pageLabels.headerFontSizeMm + 6
+        : 0) -
+      (settings.pageLabels.showFooter
+        ? settings.pageLabels.footerFontSizeMm + 6
+        : 0)
   ) {
     throw new RangeError("The selected row geometry does not fit on the page.");
+  }
+
+  for (const [name, value] of [
+    ["headerFontSizeMm", settings.pageLabels.headerFontSizeMm],
+    ["footerFontSizeMm", settings.pageLabels.footerFontSizeMm],
+  ] as const) {
+    if (!Number.isFinite(value) || value < 2 || value > 8) {
+      throw new RangeError(`${name} must be between 2 and 8 millimetres.`);
+    }
   }
 }

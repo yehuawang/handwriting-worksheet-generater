@@ -1,5 +1,4 @@
-import { parse } from "opentype.js";
-import type { Font } from "opentype.js";
+import { parse, type Font } from "opentype.js";
 
 import { extractFontMetrics } from "../core/font-metrics";
 import type { LoadedWorksheetFont } from "./worksheet-fonts";

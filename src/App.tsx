@@ -35,6 +35,7 @@ Descending letters reach below: g j p q y`;
 function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fontInputRef = useRef<HTMLInputElement>(null);
+  const dragDepthRef = useRef(0);
   const [sourceText, setSourceText] = useState(SAMPLE_TEXT);
   const [sourceFileName, setSourceFileName] = useState("sample.txt");
   const [worksheetFont, setWorksheetFont] =
@@ -53,6 +54,9 @@ function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [activePageIndex, setActivePageIndex] = useState(0);
+  const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
+  const [previewZoom, setPreviewZoom] = useState(100);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
 
   useEffect(() => {
     if (!isBuiltInFontId(selectedFontId)) {
@@ -199,6 +203,27 @@ function App() {
     }
   }
 
+  async function handleDroppedFiles(files: FileList): Promise<void> {
+    const file = Array.from(files).find((candidate) =>
+      /\.(txt|ttf|otf)$/i.test(candidate.name),
+    );
+
+    setIsDraggingFile(false);
+    dragDepthRef.current = 0;
+    if (!file) {
+      setExportError("Drop a .txt, .ttf, or .otf file.");
+      return;
+    }
+
+    if (file.name.toLowerCase().endsWith(".txt")) {
+      await handleTextFile(file);
+      setActiveStep(1);
+    } else {
+      await handleCustomFont(file);
+      setActiveStep(2);
+    }
+  }
+
   async function handleExport(): Promise<void> {
     if (!worksheetFont || !worksheetDocument) {
       return;
@@ -254,7 +279,27 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
+    <div
+      className="app-shell"
+      onDragEnter={(event) => {
+        event.preventDefault();
+        dragDepthRef.current += 1;
+        setIsDraggingFile(true);
+      }}
+      onDragOver={(event) => event.preventDefault()}
+      onDragLeave={(event) => {
+        event.preventDefault();
+        dragDepthRef.current = Math.max(0, dragDepthRef.current - 1);
+        if (dragDepthRef.current === 0) {
+          setIsDraggingFile(false);
+        }
+      }}
+      onDrop={(event) => {
+        event.preventDefault();
+        dragDepthRef.current = 0;
+        void handleDroppedFiles(event.dataTransfer.files);
+      }}
+    >
       <header className="app-header">
         <div className="brand">
           <span className="brand-mark" aria-hidden="true">
@@ -270,377 +315,474 @@ function App() {
 
       <main className="workspace">
         <aside className="control-panel" aria-label="Worksheet controls">
-          <section className="panel-section source-section">
-            <div className="section-heading">
-              <div>
-                <span className="step-label">Step 1</span>
-                <h2>Add your text</h2>
-              </div>
+          <div className="control-sections">
+            <section
+              className="panel-section source-section"
+              data-expanded={activeStep === 1}
+            >
               <button
-                className="secondary-button compact-button"
+                className="section-heading accordion-toggle"
                 type="button"
-                onClick={() => void handleImportClick()}
+                aria-expanded={activeStep === 1}
+                aria-controls="step-1-content"
+                onClick={() => setActiveStep(1)}
               >
-                Import .txt
+                <div>
+                  <span className="step-label">Step 1</span>
+                  <h2>Add your text</h2>
+                </div>
+                <AccordionChevron expanded={activeStep === 1} />
               </button>
-              <input
-                ref={fileInputRef}
-                className="visually-hidden"
-                type="file"
-                accept=".txt,text/plain"
-                onChange={(event) => {
-                  void handleTextFile(event.currentTarget.files?.[0]);
-                  event.currentTarget.value = "";
-                }}
-              />
-            </div>
-
-            <label className="field-label" htmlFor="source-text">
-              Worksheet text
-            </label>
-            <textarea
-              id="source-text"
-              value={sourceText}
-              spellCheck="true"
-              onChange={(event) => {
-                setSourceText(event.currentTarget.value);
-                setSourceFileName("worksheet.txt");
-              }}
-            />
-            <div className="field-meta">
-              <span>{sourceFileName}</span>
-              <span>{sourceText.length.toLocaleString()} characters</span>
-            </div>
-          </section>
-
-          <section className="panel-section">
-            <div className="section-heading">
-              <div>
-                <span className="step-label">Step 2</span>
-                <h2>Set up the writing rows</h2>
-              </div>
-            </div>
-
-            <div className="field-grid">
-              <div className="form-field">
-                <label htmlFor="worksheet-font">Handwriting font</label>
-                <select
-                  id="worksheet-font"
-                  className="font-select"
-                  style={{ fontFamily: `"${selectedFontFamily}"` }}
-                  value={selectedFontId}
-                  onChange={(event) => {
-                    setFontError(null);
-                    const fontId = event.currentTarget.value;
-                    setSelectedFontId(fontId);
-                    if (customFont?.id === fontId) {
-                      setWorksheetFont(customFont);
-                    }
-                  }}
-                >
-                  {BUILT_IN_FONTS.map(({ id, familyName }) => (
-                    <option
-                      key={id}
-                      value={id}
-                      style={{ fontFamily: `"${familyName}"` }}
-                    >
-                      {familyName}
-                    </option>
-                  ))}
-                  {customFont ? (
-                    <option
-                      value={customFont.id}
-                      style={{ fontFamily: `"${customFont.cssFamilyName}"` }}
-                    >
-                      {customFont.familyName} (uploaded)
-                    </option>
-                  ) : null}
-                </select>
-                <button
-                  className="font-upload-button"
-                  type="button"
-                  disabled={isLoadingFont}
-                  onClick={() => fontInputRef.current?.click()}
-                >
-                  {isLoadingFont ? "Loading font…" : "Upload TTF or OTF"}
-                </button>
-                <input
-                  ref={fontInputRef}
-                  className="visually-hidden"
-                  type="file"
-                  accept=".ttf,.otf,font/ttf,font/otf"
-                  onChange={(event) => {
-                    void handleCustomFont(event.currentTarget.files?.[0]);
-                    event.currentTarget.value = "";
-                  }}
-                />
-                <small className="font-upload-note">
-                  Used only on this device and embedded in the PDF.
-                </small>
-              </div>
-
-              <label className="form-field">
-                <span>Guideline style</span>
-                <select
-                  value={settings.guidelines.mode}
-                  onChange={(event) =>
-                    updateGuidelines({
-                      mode: event.currentTarget.value as GuidelineMode,
-                    })
-                  }
-                >
-                  <option value="baseline">Baseline only</option>
-                  <option value="three-line">Three lines</option>
-                  <option value="four-line">Four lines</option>
-                </select>
-              </label>
-
-              <label className="form-field">
-                <span>Writing height</span>
-                <span className="number-control">
+              {activeStep === 1 ? (
+                <div className="panel-section-content" id="step-1-content">
+                  <button
+                    className="secondary-button compact-button import-button"
+                    type="button"
+                    onClick={() => void handleImportClick()}
+                  >
+                    Import .txt file
+                  </button>
                   <input
-                    type="number"
-                    min="4"
-                    max="12"
-                    step="1"
-                    value={settings.guidelines.writingHeightMm}
-                    onChange={(event) =>
-                      updateGuidelines({
-                        writingHeightMm: Number(event.currentTarget.value),
-                      })
-                    }
-                  />
-                  <span>mm</span>
-                </span>
-              </label>
-
-              <label className="form-field">
-                <span>Gap between rows</span>
-                <span className="number-control">
-                  <input
-                    type="number"
-                    min="0"
-                    max="12"
-                    step="0.5"
-                    value={settings.guidelines.rowGapMm}
-                    onChange={(event) =>
-                      updateGuidelines({
-                        rowGapMm: Number(event.currentTarget.value),
-                      })
-                    }
-                  />
-                  <span>mm</span>
-                </span>
-              </label>
-
-              <label className="form-field">
-                <span>Example color</span>
-                <span className="color-control">
-                  <input
-                    type="color"
-                    value={textColor}
-                    onChange={(event) =>
-                      setTextColor(event.currentTarget.value)
-                    }
-                    aria-label="Example text color"
-                  />
-                  <span>{textColor.toUpperCase()}</span>
-                </span>
-              </label>
-            </div>
-
-            <label className="checkbox-field">
-              <input
-                type="checkbox"
-                checked={settings.practiceRows === 1}
-                onChange={(event) => {
-                  const practiceRows = event.currentTarget.checked ? 1 : 0;
-                  setSettings((current) => ({
-                    ...current,
-                    practiceRows,
-                  }));
-                }}
-              />
-              <span>
-                <strong>Add a practice row</strong>
-                <small>Place one empty guided row after each example.</small>
-              </span>
-            </label>
-          </section>
-
-          <section className="panel-section">
-            <div className="section-heading">
-              <div>
-                <span className="step-label">Step 3</span>
-                <h2>Choose the page</h2>
-              </div>
-            </div>
-
-            <div className="field-grid">
-              <label className="form-field">
-                <span>Paper size</span>
-                <select
-                  value={settings.paper}
-                  onChange={(event) => {
-                    const paper = event.currentTarget.value as PaperSizeName;
-                    setSettings((current) => ({
-                      ...current,
-                      paper,
-                    }));
-                  }}
-                >
-                  <option value="letter">US Letter</option>
-                  <option value="a4">A4</option>
-                </select>
-              </label>
-
-              <label className="form-field">
-                <span>Orientation</span>
-                <select
-                  value={settings.orientation}
-                  onChange={(event) => {
-                    const orientation = event.currentTarget
-                      .value as PageOrientation;
-                    setSettings((current) => ({
-                      ...current,
-                      orientation,
-                    }));
-                  }}
-                >
-                  <option value="portrait">Portrait</option>
-                  <option value="landscape">Landscape</option>
-                </select>
-              </label>
-
-              <label className="form-field">
-                <span>Page margin</span>
-                <span className="number-control">
-                  <input
-                    type="number"
-                    min="5"
-                    max="30"
-                    step="0.5"
-                    value={settings.marginMm}
+                    ref={fileInputRef}
+                    className="visually-hidden"
+                    type="file"
+                    accept=".txt,text/plain"
                     onChange={(event) => {
-                      const marginMm = Number(event.currentTarget.value);
-                      if (marginMm >= 5 && marginMm <= 30) {
-                        setSettings((current) => ({
-                          ...current,
-                          marginMm,
-                        }));
-                      }
+                      void handleTextFile(event.currentTarget.files?.[0]);
+                      event.currentTarget.value = "";
                     }}
                   />
-                  <span>mm</span>
-                </span>
-              </label>
-            </div>
 
-            <fieldset className="page-label-settings">
-              <legend>Header and footer</legend>
-
-              <label className="checkbox-field">
-                <input
-                  type="checkbox"
-                  checked={settings.pageLabels.showHeader}
-                  onChange={(event) =>
-                    updatePageLabels({
-                      showHeader: event.currentTarget.checked,
-                    })
-                  }
-                />
-                <span>
-                  <strong>Show header</strong>
-                  <small>Reserve space above the writing rows.</small>
-                </span>
-              </label>
-
-              {settings.pageLabels.showHeader ? (
-                <div className="field-grid label-field-grid">
-                  <label className="form-field" htmlFor="header-left">
-                    <span>Header left</span>
-                    <input
-                      id="header-left"
-                      type="text"
-                      value={settings.pageLabels.headerLeft}
-                      onChange={(event) =>
-                        updatePageLabels({
-                          headerLeft: event.currentTarget.value,
-                        })
-                      }
-                    />
+                  <label className="field-label" htmlFor="source-text">
+                    Worksheet text
                   </label>
-                  <label className="form-field" htmlFor="header-right">
-                    <span>Header right</span>
+                  <textarea
+                    id="source-text"
+                    value={sourceText}
+                    spellCheck="true"
+                    onChange={(event) => {
+                      setSourceText(event.currentTarget.value);
+                      setSourceFileName("worksheet.txt");
+                    }}
+                  />
+                  <div className="field-meta">
+                    <span>{sourceFileName}</span>
+                    <span>{sourceText.length.toLocaleString()} characters</span>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+
+            <section className="panel-section" data-expanded={activeStep === 2}>
+              <button
+                className="section-heading accordion-toggle"
+                type="button"
+                aria-expanded={activeStep === 2}
+                aria-controls="step-2-content"
+                onClick={() => setActiveStep(2)}
+              >
+                <div>
+                  <span className="step-label">Step 2</span>
+                  <h2>Set up the writing rows</h2>
+                </div>
+                <AccordionChevron expanded={activeStep === 2} />
+              </button>
+
+              {activeStep === 2 ? (
+                <div className="panel-section-content" id="step-2-content">
+                  <div className="field-grid">
+                    <div className="form-field">
+                      <label htmlFor="worksheet-font">Handwriting font</label>
+                      <select
+                        id="worksheet-font"
+                        className="font-select"
+                        style={{ fontFamily: `"${selectedFontFamily}"` }}
+                        value={selectedFontId}
+                        onChange={(event) => {
+                          setFontError(null);
+                          const fontId = event.currentTarget.value;
+                          setSelectedFontId(fontId);
+                          if (customFont?.id === fontId) {
+                            setWorksheetFont(customFont);
+                          }
+                        }}
+                      >
+                        {BUILT_IN_FONTS.map(({ id, familyName }) => (
+                          <option
+                            key={id}
+                            value={id}
+                            style={{ fontFamily: `"${familyName}"` }}
+                          >
+                            {familyName}
+                          </option>
+                        ))}
+                        {customFont ? (
+                          <option
+                            value={customFont.id}
+                            style={{
+                              fontFamily: `"${customFont.cssFamilyName}"`,
+                            }}
+                          >
+                            {customFont.familyName} (uploaded)
+                          </option>
+                        ) : null}
+                      </select>
+                      <button
+                        className="font-upload-button"
+                        type="button"
+                        disabled={isLoadingFont}
+                        onClick={() => fontInputRef.current?.click()}
+                      >
+                        {isLoadingFont ? "Loading font…" : "Upload TTF or OTF"}
+                      </button>
+                      <input
+                        ref={fontInputRef}
+                        className="visually-hidden"
+                        type="file"
+                        accept=".ttf,.otf,font/ttf,font/otf"
+                        onChange={(event) => {
+                          void handleCustomFont(event.currentTarget.files?.[0]);
+                          event.currentTarget.value = "";
+                        }}
+                      />
+                      <small className="font-upload-note">
+                        Used only on this device and embedded in the PDF.
+                      </small>
+                    </div>
+
+                    <label className="form-field">
+                      <span>Guideline style</span>
+                      <select
+                        value={settings.guidelines.mode}
+                        onChange={(event) =>
+                          updateGuidelines({
+                            mode: event.currentTarget.value as GuidelineMode,
+                          })
+                        }
+                      >
+                        <option value="none">None</option>
+                        <option value="baseline">Baseline only</option>
+                        <option value="three-line">Three lines</option>
+                        <option value="four-line">Four lines</option>
+                      </select>
+                    </label>
+
+                    <label className="form-field">
+                      <span>Writing height</span>
+                      <span className="number-control">
+                        <input
+                          type="number"
+                          min="4"
+                          max="12"
+                          step="1"
+                          value={settings.guidelines.writingHeightMm}
+                          onChange={(event) =>
+                            updateGuidelines({
+                              writingHeightMm: Number(
+                                event.currentTarget.value,
+                              ),
+                            })
+                          }
+                        />
+                        <span>mm</span>
+                      </span>
+                    </label>
+
+                    <label className="form-field">
+                      <span>Gap between rows</span>
+                      <span className="number-control">
+                        <input
+                          type="number"
+                          min="0"
+                          max="12"
+                          step="0.5"
+                          value={settings.guidelines.rowGapMm}
+                          onChange={(event) =>
+                            updateGuidelines({
+                              rowGapMm: Number(event.currentTarget.value),
+                            })
+                          }
+                        />
+                        <span>mm</span>
+                      </span>
+                    </label>
+
+                    <label className="form-field">
+                      <span>Example color</span>
+                      <span className="color-control">
+                        <input
+                          type="color"
+                          value={textColor}
+                          onChange={(event) =>
+                            setTextColor(event.currentTarget.value)
+                          }
+                          aria-label="Example text color"
+                        />
+                        <span>{textColor.toUpperCase()}</span>
+                      </span>
+                    </label>
+                  </div>
+
+                  <label className="checkbox-field">
                     <input
-                      id="header-right"
-                      type="text"
-                      value={settings.pageLabels.headerRight}
-                      onChange={(event) =>
-                        updatePageLabels({
-                          headerRight: event.currentTarget.value,
-                        })
-                      }
+                      type="checkbox"
+                      checked={settings.practiceRows === 1}
+                      onChange={(event) => {
+                        const practiceRows = event.currentTarget.checked
+                          ? 1
+                          : 0;
+                        setSettings((current) => ({
+                          ...current,
+                          practiceRows,
+                        }));
+                      }}
                     />
+                    <span>
+                      <strong>Add a practice row</strong>
+                      <small>
+                        Place one empty guided row after each example.
+                      </small>
+                    </span>
                   </label>
                 </div>
               ) : null}
+            </section>
 
-              <label className="checkbox-field">
-                <input
-                  type="checkbox"
-                  checked={settings.pageLabels.showFooter}
-                  onChange={(event) =>
-                    updatePageLabels({
-                      showFooter: event.currentTarget.checked,
-                    })
-                  }
-                />
-                <span>
-                  <strong>Show footer</strong>
-                  <small>Reserve space below the writing rows.</small>
-                </span>
-              </label>
+            <section className="panel-section" data-expanded={activeStep === 3}>
+              <button
+                className="section-heading accordion-toggle"
+                type="button"
+                aria-expanded={activeStep === 3}
+                aria-controls="step-3-content"
+                onClick={() => setActiveStep(3)}
+              >
+                <div>
+                  <span className="step-label">Step 3</span>
+                  <h2>Choose the page</h2>
+                </div>
+                <AccordionChevron expanded={activeStep === 3} />
+              </button>
 
-              {settings.pageLabels.showFooter ? (
-                <label
-                  className="form-field footer-label-field"
-                  htmlFor="footer-center"
-                >
-                  <span>Footer center</span>
-                  <input
-                    id="footer-center"
-                    type="text"
-                    value={settings.pageLabels.footerCenter}
-                    onChange={(event) =>
-                      updatePageLabels({
-                        footerCenter: event.currentTarget.value,
-                      })
-                    }
-                  />
-                </label>
+              {activeStep === 3 ? (
+                <div className="panel-section-content" id="step-3-content">
+                  <div className="field-grid">
+                    <label className="form-field">
+                      <span>Paper size</span>
+                      <select
+                        value={settings.paper}
+                        onChange={(event) => {
+                          const paper = event.currentTarget
+                            .value as PaperSizeName;
+                          setSettings((current) => ({
+                            ...current,
+                            paper,
+                          }));
+                        }}
+                      >
+                        <option value="letter">US Letter</option>
+                        <option value="a4">A4</option>
+                      </select>
+                    </label>
+
+                    <label className="form-field">
+                      <span>Orientation</span>
+                      <select
+                        value={settings.orientation}
+                        onChange={(event) => {
+                          const orientation = event.currentTarget
+                            .value as PageOrientation;
+                          setSettings((current) => ({
+                            ...current,
+                            orientation,
+                          }));
+                        }}
+                      >
+                        <option value="portrait">Portrait</option>
+                        <option value="landscape">Landscape</option>
+                      </select>
+                    </label>
+
+                    <label className="form-field">
+                      <span>Page margin</span>
+                      <span className="number-control">
+                        <input
+                          type="number"
+                          min="5"
+                          max="30"
+                          step="0.5"
+                          value={settings.marginMm}
+                          onChange={(event) => {
+                            const marginMm = Number(event.currentTarget.value);
+                            if (marginMm >= 5 && marginMm <= 30) {
+                              setSettings((current) => ({
+                                ...current,
+                                marginMm,
+                              }));
+                            }
+                          }}
+                        />
+                        <span>mm</span>
+                      </span>
+                    </label>
+                  </div>
+
+                  <fieldset className="page-label-settings">
+                    <legend>Header and footer</legend>
+
+                    <label className="checkbox-field">
+                      <input
+                        type="checkbox"
+                        checked={settings.pageLabels.showHeader}
+                        onChange={(event) =>
+                          updatePageLabels({
+                            showHeader: event.currentTarget.checked,
+                          })
+                        }
+                      />
+                      <span>
+                        <strong>Show header</strong>
+                        <small>Reserve space above the writing rows.</small>
+                      </span>
+                    </label>
+
+                    {settings.pageLabels.showHeader ? (
+                      <div className="field-grid label-field-grid">
+                        <label className="form-field" htmlFor="header-left">
+                          <span>Header left</span>
+                          <input
+                            id="header-left"
+                            type="text"
+                            value={settings.pageLabels.headerLeft}
+                            onChange={(event) =>
+                              updatePageLabels({
+                                headerLeft: event.currentTarget.value,
+                              })
+                            }
+                          />
+                        </label>
+                        <label className="form-field" htmlFor="header-right">
+                          <span>Header right</span>
+                          <input
+                            id="header-right"
+                            type="text"
+                            value={settings.pageLabels.headerRight}
+                            onChange={(event) =>
+                              updatePageLabels({
+                                headerRight: event.currentTarget.value,
+                              })
+                            }
+                          />
+                        </label>
+                        <label className="form-field">
+                          <span>Header font size</span>
+                          <span className="number-control">
+                            <input
+                              type="number"
+                              min="2"
+                              max="8"
+                              step="0.5"
+                              value={settings.pageLabels.headerFontSizeMm}
+                              onChange={(event) => {
+                                const headerFontSizeMm = Number(
+                                  event.currentTarget.value,
+                                );
+                                if (
+                                  headerFontSizeMm >= 2 &&
+                                  headerFontSizeMm <= 8
+                                ) {
+                                  updatePageLabels({ headerFontSizeMm });
+                                }
+                              }}
+                            />
+                            <span>mm</span>
+                          </span>
+                        </label>
+                      </div>
+                    ) : null}
+
+                    <label className="checkbox-field">
+                      <input
+                        type="checkbox"
+                        checked={settings.pageLabels.showFooter}
+                        onChange={(event) =>
+                          updatePageLabels({
+                            showFooter: event.currentTarget.checked,
+                          })
+                        }
+                      />
+                      <span>
+                        <strong>Show footer</strong>
+                        <small>Reserve space below the writing rows.</small>
+                      </span>
+                    </label>
+
+                    {settings.pageLabels.showFooter ? (
+                      <div className="field-grid footer-label-field">
+                        <label className="form-field" htmlFor="footer-center">
+                          <span>Footer center</span>
+                          <input
+                            id="footer-center"
+                            type="text"
+                            value={settings.pageLabels.footerCenter}
+                            onChange={(event) =>
+                              updatePageLabels({
+                                footerCenter: event.currentTarget.value,
+                              })
+                            }
+                          />
+                        </label>
+                        <label className="form-field">
+                          <span>Footer font size</span>
+                          <span className="number-control">
+                            <input
+                              type="number"
+                              min="2"
+                              max="8"
+                              step="0.5"
+                              value={settings.pageLabels.footerFontSizeMm}
+                              onChange={(event) => {
+                                const footerFontSizeMm = Number(
+                                  event.currentTarget.value,
+                                );
+                                if (
+                                  footerFontSizeMm >= 2 &&
+                                  footerFontSizeMm <= 8
+                                ) {
+                                  updatePageLabels({ footerFontSizeMm });
+                                }
+                              }}
+                            />
+                            <span>mm</span>
+                          </span>
+                        </label>
+                      </div>
+                    ) : null}
+
+                    <small className="token-hint">
+                      Available placeholders: {"{fileName}"}, {"{page}"}, and{" "}
+                      {"{pages}"}.
+                    </small>
+                  </fieldset>
+
+                  <label className="checkbox-field calibration-option">
+                    <input
+                      type="checkbox"
+                      checked={showCalibration}
+                      onChange={(event) =>
+                        setShowCalibration(event.currentTarget.checked)
+                      }
+                    />
+                    <span>
+                      <strong>Include 50 mm calibration mark</strong>
+                      <small>
+                        Print at actual size and verify it with a ruler.
+                      </small>
+                    </span>
+                  </label>
+                </div>
               ) : null}
-
-              <small className="token-hint">
-                Available placeholders: {"{fileName}"}, {"{page}"}, and{" "}
-                {"{pages}"}.
-              </small>
-            </fieldset>
-
-            <label className="checkbox-field calibration-option">
-              <input
-                type="checkbox"
-                checked={showCalibration}
-                onChange={(event) =>
-                  setShowCalibration(event.currentTarget.checked)
-                }
-              />
-              <span>
-                <strong>Include 50 mm calibration mark</strong>
-                <small>Print at actual size and verify it with a ruler.</small>
-              </span>
-            </label>
-          </section>
+            </section>
+          </div>
 
           <div className="export-area">
             <button
@@ -664,19 +806,53 @@ function App() {
               <span className="eyebrow">Live preview</span>
               <h2 id="preview-title">Worksheet pages</h2>
             </div>
-            {pageModel ? (
-              <div className="page-summary" aria-label="Page summary">
-                <span>
-                  {Math.round(pageModel.pageSize.widthMm)} ×{" "}
-                  {Math.round(pageModel.pageSize.heightMm)} mm
-                </span>
-                <span>{pageModel.rows.length} rows</span>
-                <span>
-                  Page {currentPageIndex + 1} of{" "}
-                  {worksheetDocument?.pages.length ?? 1}
-                </span>
+            <div className="preview-actions">
+              {pageModel ? (
+                <div className="page-summary" aria-label="Page summary">
+                  <span>
+                    {Math.round(pageModel.pageSize.widthMm)} ×{" "}
+                    {Math.round(pageModel.pageSize.heightMm)} mm
+                  </span>
+                  <span>{pageModel.rows.length} rows</span>
+                  <span>
+                    Page {currentPageIndex + 1} of{" "}
+                    {worksheetDocument?.pages.length ?? 1}
+                  </span>
+                </div>
+              ) : null}
+              <div className="zoom-controls" aria-label="Preview zoom">
+                <button
+                  type="button"
+                  aria-label="Zoom out"
+                  title="Zoom out"
+                  disabled={previewZoom <= 50}
+                  onClick={() =>
+                    setPreviewZoom((current) => Math.max(50, current - 25))
+                  }
+                >
+                  <ZoomIcon operation="out" />
+                </button>
+                <button
+                  className="zoom-value"
+                  type="button"
+                  title="Fit worksheet to window"
+                  onClick={() => setPreviewZoom(100)}
+                >
+                  {previewZoom === 100 ? "Fit" : `${previewZoom}%`}
+                </button>
+                <button
+                  type="button"
+                  aria-label="Zoom in"
+                  title="Zoom in"
+                  disabled={previewZoom >= 200}
+                  onClick={() =>
+                    setPreviewZoom((current) => Math.min(200, current + 25))
+                  }
+                >
+                  <ZoomIcon operation="in" />
+                </button>
               </div>
-            ) : null}
+            </div>
           </div>
 
           <StatusMessages
@@ -690,13 +866,16 @@ function App() {
 
           <div className="preview-stage">
             {pageModel ? (
-              <WorksheetPreview
-                model={pageModel}
-                fontSizeMm={fontSizeMm}
-                fontFamily={worksheetFont?.cssFamilyName ?? "Patrick Hand"}
-                textColor={textColor}
-                showCalibration={showCalibration}
-              />
+              <div className="preview-canvas" data-zoomed={previewZoom > 100}>
+                <WorksheetPreview
+                  model={pageModel}
+                  fontSizeMm={fontSizeMm}
+                  fontFamily={worksheetFont?.cssFamilyName ?? "Patrick Hand"}
+                  textColor={textColor}
+                  showCalibration={showCalibration}
+                  zoomPercent={previewZoom}
+                />
+              </div>
             ) : (
               <div className="preview-loading" role="status">
                 <span className="loading-dot" />
@@ -777,6 +956,15 @@ function App() {
           ) : null}
         </section>
       </main>
+      {isDraggingFile ? (
+        <div className="drop-overlay" aria-hidden="true">
+          <div>
+            <UploadIcon />
+            <strong>Drop your text or font file</strong>
+            <span>.txt, .ttf, and .otf files are supported</span>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -840,6 +1028,67 @@ function DownloadIcon() {
         stroke="currentColor"
         strokeLinecap="round"
         strokeLinejoin="round"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
+function UploadIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 16V4m0 0L8 8m4-4 4 4M5 14v5h14v-5"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
+function AccordionChevron({ expanded }: { readonly expanded: boolean }) {
+  return (
+    <svg
+      className="accordion-chevron"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      data-expanded={expanded}
+    >
+      <path
+        d="m7 9 5 5 5-5"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
+function ZoomIcon({ operation }: { readonly operation: "in" | "out" }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle
+        cx="10.5"
+        cy="10.5"
+        r="5.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      />
+      <path
+        d={
+          operation === "in"
+            ? "M10.5 8v5M8 10.5h5M15 15l4 4"
+            : "M8 10.5h5M15 15l4 4"
+        }
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
         strokeWidth="2"
       />
     </svg>

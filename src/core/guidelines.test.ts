@@ -31,6 +31,16 @@ describe("guideline geometry", () => {
     ]);
   });
 
+  it("returns no lines in none mode while preserving row geometry", () => {
+    const geometry = createGuidelineGeometry({
+      ...DEFAULT_GUIDELINE_SETTINGS,
+      mode: "none",
+    });
+
+    expect(geometry.guidelines).toEqual([]);
+    expect(geometry.rowHeightMm).toBeCloseTo(8.1);
+  });
+
   it("omits the descender line in three-line mode", () => {
     const settings: GuidelineSettings = {
       ...DEFAULT_GUIDELINE_SETTINGS,

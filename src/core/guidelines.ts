@@ -1,4 +1,4 @@
-export type GuidelineMode = "baseline" | "three-line" | "four-line";
+export type GuidelineMode = "none" | "baseline" | "three-line" | "four-line";
 export type GuidelineKind = "ascender" | "x-height" | "baseline" | "descender";
 
 export interface GuidelineSettings {
@@ -78,6 +78,8 @@ export function createGuidelineGeometry(
 
 function getGuidelineKinds(mode: GuidelineMode): readonly GuidelineKind[] {
   switch (mode) {
+    case "none":
+      return [];
     case "baseline":
       return ["baseline"];
     case "three-line":

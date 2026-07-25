@@ -57,6 +57,29 @@ describe("worksheet document layout", () => {
     ).toBe("practice.txt - 2/4");
   });
 
+  it("reserves additional writing space for larger page labels", () => {
+    const settings = {
+      ...DEFAULT_WORKSHEET_SETTINGS,
+      pageLabels: {
+        ...DEFAULT_WORKSHEET_SETTINGS.pageLabels,
+        headerFontSizeMm: 6,
+        footerFontSizeMm: 5,
+      },
+    };
+    const document = createWorksheetDocumentModel(
+      "Practice",
+      settings,
+      measureText,
+    );
+
+    expect(document.pages[0].contentTopMm).toBeCloseTo(24.7);
+    expect(document.pages[0].contentBottomMm).toBeCloseTo(255.7);
+    expect(document.pages[0].labels).toMatchObject({
+      headerFontSizeMm: 6,
+      footerFontSizeMm: 5,
+    });
+  });
+
   it("reports horizontal overflow", () => {
     const document = createWorksheetDocumentModel(
       "This line is intentionally too wide",
