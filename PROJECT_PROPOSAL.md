@@ -234,8 +234,14 @@ Exit criterion: a user can produce a multi-page printable worksheet from a text 
 - Persistent settings and approved custom fonts.
 - Windows installer/executable.
 - Application metadata, icons, and versioning.
+- Branded Windows installer metadata and artwork.
+- Signed Windows artifacts with clear publisher identity and checksum publication.
+- A signed and notarized macOS application and installer with platform-appropriate icons.
+- Reproducible release automation for each supported operating system.
 
 Exit criterion: a non-developer can run the app offline and export a worksheet.
+
+Unsigned development builds may trigger Windows SmartScreen or macOS Gatekeeper warnings. Public desktop releases should use platform code-signing identities. Windows releases should be Authenticode-signed and allowed to establish publisher reputation; macOS releases should use an Apple Developer ID certificate, hardened runtime, and Apple notarization. Signing reduces avoidable trust warnings but does not guarantee that every operating-system reputation prompt disappears immediately.
 
 ### Phase 4 — Quality and convenience
 
@@ -264,16 +270,18 @@ Exit criterion: a non-developer can run the app offline and export a worksheet.
 
 ## 11. Risks
 
-| Risk                              | Mitigation                                                      |
-| --------------------------------- | --------------------------------------------------------------- |
-| Fonts align differently           | Read metrics, store per-font defaults, and allow manual offsets |
-| Preview differs from print        | Use one physical-unit page model                                |
-| Custom font cannot be embedded    | Validate and show an actionable warning                         |
-| Long or indented lines overflow   | Offer wrapping policy and overflow warnings                     |
-| Web and desktop behavior diverges | Share the layout and renderer                                   |
-| Printer scaling alters dimensions | Provide calibration and actual-size instructions                |
-| Font licensing prevents bundling  | Use open-licensed fonts and retain notices                      |
-| Too many controls overwhelm users | Use presets with an expandable Advanced section                 |
+| Risk                                       | Mitigation                                                                                 |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------ |
+| Fonts align differently                    | Read metrics, store per-font defaults, and allow manual offsets                            |
+| Preview differs from print                 | Use one physical-unit page model                                                           |
+| Custom font cannot be embedded             | Validate and show an actionable warning                                                    |
+| Long or indented lines overflow            | Offer wrapping policy and overflow warnings                                                |
+| Web and desktop behavior diverges          | Share the layout and renderer                                                              |
+| Printer scaling alters dimensions          | Provide calibration and actual-size instructions                                           |
+| Font licensing prevents bundling           | Use open-licensed fonts and retain notices                                                 |
+| Too many controls overwhelm users          | Use presets with an expandable Advanced section                                            |
+| Unsigned installers trigger trust warnings | Sign releases, publish checksums, document verification, and notarize macOS artifacts      |
+| Platform packaging looks inconsistent      | Maintain platform-specific icon and installer assets and test each bundle on its target OS |
 
 ## 12. Initial Definition of Done
 

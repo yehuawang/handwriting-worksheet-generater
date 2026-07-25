@@ -33,21 +33,27 @@ The roadmap communicates direction rather than promising dates. Priorities may c
 ## Milestone 3 — Desktop Release
 
 - [x] Native file-open and save dialogs.
-- Local presets and settings.
-- Windows installer and portable build.
-- Application identity, icons, signing, and release automation.
+- [x] Versioned local settings and named reusable presets.
+- [x] Windows installer and portable build.
+- [ ] Final application identity and platform-specific icon audit.
+- [ ] Customized Windows installer branding and metadata.
+- [ ] Windows code signing and reputation guidance to reduce SmartScreen warnings.
+- [ ] macOS application bundle, installer appearance, signing, and notarization.
+- [ ] Automated, reproducible release builds with checksums and release notes.
 
 ## Milestone 4 — Quality and Accessibility
 
-- Calibration page.
-- Visual-regression tests.
-- Keyboard and screen-reader audit.
-- Additional languages and font coverage.
-- Educator usability testing.
+- [ ] Dedicated calibration page and print-verification instructions.
+- [ ] Visual-regression tests for preview and PDF rendering.
+- [ ] Complete keyboard navigation and visible-focus audit.
+- [ ] Screen-reader names, grouping, status announcements, and error review.
+- [ ] Contrast, zoom, reduced-motion, and high-contrast-mode review.
+- [ ] Additional languages, Unicode fixtures, and font-coverage guidance.
+- [ ] Educator and handwriting-learner usability testing.
 
 ## Future
 
-- macOS and Linux desktop releases.
+- Linux desktop release.
 - Hosted web application.
 - More teaching-system presets.
 - Community-contributed fonts and templates subject to licensing review.

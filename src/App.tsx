@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   createWorksheetDocumentModel,
-  DEFAULT_WORKSHEET_SETTINGS,
   getFontSizeForWritingHeight,
   type GuidelineMode,
   type PageOrientation,
@@ -23,6 +22,24 @@ import {
   openDesktopTextDocument,
   saveDesktopPdf,
 } from "./platform/desktop-files";
+import {
+  createPreset,
+  DEFAULT_WORKSHEET_CONFIGURATION,
+  loadWorksheetPreferences,
+  saveWorksheetPreferences,
+  upsertPreset,
+  type WorksheetConfiguration,
+} from "./settings/worksheet-preferences";
+import {
+  deleteLocalAsset,
+  deletePresetAssets,
+  getPresetFontAssetId,
+  getPresetTextAssetId,
+  loadFontAsset,
+  loadTextAsset,
+  saveFontAsset,
+  saveTextAsset,
+} from "./storage/local-assets";
 import "./App.css";
 
 const SAMPLE_TEXT = `Handwriting practice
@@ -33,24 +50,47 @@ Round letters sit in the middle: a c e o
 Descending letters reach below: g j p q y`;
 
 function App() {
+  const [initialPreferences] = useState(loadWorksheetPreferences);
+  const initialBuiltInFontId = isBuiltInFontId(
+    initialPreferences.recent.builtInFontId,
+  )
+    ? initialPreferences.recent.builtInFontId
+    : DEFAULT_WORKSHEET_CONFIGURATION.builtInFontId;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fontInputRef = useRef<HTMLInputElement>(null);
   const dragDepthRef = useRef(0);
+  const lastBuiltInFontIdRef = useRef(initialBuiltInFontId);
   const [sourceText, setSourceText] = useState(SAMPLE_TEXT);
   const [sourceFileName, setSourceFileName] = useState("sample.txt");
   const [worksheetFont, setWorksheetFont] =
     useState<LoadedWorksheetFont | null>(null);
-  const [selectedFontId, setSelectedFontId] = useState("patrick-hand");
+  const [selectedFontId, setSelectedFontId] = useState(initialBuiltInFontId);
   const [customFont, setCustomFont] = useState<LoadedWorksheetFont | null>(
     null,
   );
+  const [customFontSource, setCustomFontSource] = useState<{
+    readonly fileName: string;
+    readonly mimeType: string;
+    readonly lastModified: number;
+  } | null>(null);
   const [isLoadingFont, setIsLoadingFont] = useState(false);
   const [fontError, setFontError] = useState<string | null>(null);
   const [settings, setSettings] = useState<WorksheetSettings>(
-    DEFAULT_WORKSHEET_SETTINGS,
+    initialPreferences.recent.settings,
   );
-  const [textColor, setTextColor] = useState("#475569");
-  const [showCalibration, setShowCalibration] = useState(true);
+  const [textColor, setTextColor] = useState(
+    initialPreferences.recent.textColor,
+  );
+  const [showCalibration, setShowCalibration] = useState(
+    initialPreferences.recent.showCalibration,
+  );
+  const [presets, setPresets] = useState(initialPreferences.presets);
+  const [selectedPresetId, setSelectedPresetId] = useState("");
+  const [presetName, setPresetName] = useState("");
+  const [presetMessage, setPresetMessage] = useState<string | null>(null);
+  const [includeTextInPreset, setIncludeTextInPreset] = useState(false);
+  const [includeFontInPreset, setIncludeFontInPreset] = useState(false);
+  const [isUpdatingPreset, setIsUpdatingPreset] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [activePageIndex, setActivePageIndex] = useState(0);
@@ -83,6 +123,23 @@ function App() {
       isCurrentSelection = false;
     };
   }, [selectedFontId]);
+
+  useEffect(() => {
+    if (isBuiltInFontId(selectedFontId)) {
+      lastBuiltInFontIdRef.current = selectedFontId;
+    }
+
+    saveWorksheetPreferences({
+      version: 1,
+      recent: {
+        settings,
+        textColor,
+        showCalibration,
+        builtInFontId: lastBuiltInFontIdRef.current,
+      },
+      presets,
+    });
+  }, [presets, selectedFontId, settings, showCalibration, textColor]);
 
   const selectedFontFamily =
     customFont?.id === selectedFontId
@@ -192,6 +249,11 @@ function App() {
     try {
       const font = await loadCustomWorksheetFont(file);
       setCustomFont(font);
+      setCustomFontSource({
+        fileName: file.name,
+        mimeType: file.type || getFontMimeType(file.name),
+        lastModified: file.lastModified,
+      });
       setWorksheetFont(font);
       setSelectedFontId(font.id);
     } catch (error: unknown) {
@@ -222,6 +284,184 @@ function App() {
       await handleCustomFont(file);
       setActiveStep(2);
     }
+  }
+
+  function getCurrentConfiguration(): WorksheetConfiguration {
+    return {
+      settings,
+      textColor,
+      showCalibration,
+      builtInFontId: lastBuiltInFontIdRef.current,
+    };
+  }
+
+  function applyConfiguration(
+    configuration: WorksheetConfiguration,
+    applyBuiltInFont = true,
+  ): void {
+    setSettings(configuration.settings);
+    setTextColor(configuration.textColor);
+    setShowCalibration(configuration.showCalibration);
+    if (applyBuiltInFont && isBuiltInFontId(configuration.builtInFontId)) {
+      setSelectedFontId(configuration.builtInFontId);
+    }
+    setActivePageIndex(0);
+  }
+
+  async function handleSavePreset(): Promise<void> {
+    setIsUpdatingPreset(true);
+    try {
+      const existingPreset = presets.find(
+        ({ name }) =>
+          name.toLocaleLowerCase() === presetName.trim().toLocaleLowerCase(),
+      );
+      const draftPreset = createPreset(
+        presetName,
+        getCurrentConfiguration(),
+        existingPreset?.id,
+      );
+      const textAssetId = getPresetTextAssetId(draftPreset.id);
+      const customFontAssetId = getPresetFontAssetId(draftPreset.id);
+
+      if (includeTextInPreset) {
+        await saveTextAsset({
+          id: textAssetId,
+          fileName: sourceFileName,
+          text: sourceText,
+        });
+      } else {
+        await deleteLocalAsset(textAssetId);
+      }
+
+      const canStoreCurrentFont =
+        includeFontInPreset &&
+        customFont?.id === selectedFontId &&
+        customFontSource;
+      if (canStoreCurrentFont) {
+        await saveFontAsset({
+          id: customFontAssetId,
+          fileName: customFontSource.fileName,
+          mimeType: customFontSource.mimeType,
+          lastModified: customFontSource.lastModified,
+          bytes: copyArrayBuffer(customFont.bytes),
+        });
+      }
+      const shouldKeepStoredFont = Boolean(
+        canStoreCurrentFont ||
+        (includeFontInPreset && existingPreset?.customFontAssetId),
+      );
+      if (!shouldKeepStoredFont) {
+        await deleteLocalAsset(customFontAssetId);
+      }
+
+      const preset = createPreset(
+        draftPreset.name,
+        {
+          ...getCurrentConfiguration(),
+          ...(includeTextInPreset ? { textAssetId } : {}),
+          ...(shouldKeepStoredFont ? { customFontAssetId } : {}),
+        },
+        draftPreset.id,
+      );
+      setPresets((current) => upsertPreset(current, preset));
+      setSelectedPresetId(preset.id);
+      setPresetName(preset.name);
+      setPresetMessage(`Saved “${preset.name}” on this device.`);
+    } catch (error: unknown) {
+      setPresetMessage(
+        error instanceof Error ? error.message : "Unable to save the preset.",
+      );
+    } finally {
+      setIsUpdatingPreset(false);
+    }
+  }
+
+  async function handleApplyPreset(): Promise<void> {
+    const preset = presets.find(({ id }) => id === selectedPresetId);
+    if (!preset) {
+      setPresetMessage("Choose a saved preset first.");
+      return;
+    }
+    setIsUpdatingPreset(true);
+    try {
+      const [textAsset, fontAsset] = await Promise.all([
+        preset.textAssetId ? loadTextAsset(preset.textAssetId) : null,
+        preset.customFontAssetId
+          ? loadFontAsset(preset.customFontAssetId)
+          : null,
+      ]);
+
+      applyConfiguration(preset, !preset.customFontAssetId);
+      if (preset.textAssetId) {
+        if (!textAsset) {
+          throw new Error("The text saved with this preset is unavailable.");
+        }
+        setSourceText(textAsset.text);
+        setSourceFileName(textAsset.fileName);
+      }
+      if (preset.customFontAssetId) {
+        if (!fontAsset) {
+          throw new Error("The font saved with this preset is unavailable.");
+        }
+        const fontFile = new File([fontAsset.bytes], fontAsset.fileName, {
+          type: fontAsset.mimeType,
+          lastModified: fontAsset.lastModified,
+        });
+        const font = await loadCustomWorksheetFont(fontFile);
+        setCustomFont(font);
+        setCustomFontSource({
+          fileName: fontAsset.fileName,
+          mimeType: fontAsset.mimeType,
+          lastModified: fontAsset.lastModified,
+        });
+        setWorksheetFont(font);
+        setSelectedFontId(font.id);
+      }
+
+      setPresetName(preset.name);
+      setIncludeTextInPreset(Boolean(preset.textAssetId));
+      setIncludeFontInPreset(Boolean(preset.customFontAssetId));
+      setPresetMessage(`Applied “${preset.name}”.`);
+    } catch (error: unknown) {
+      setPresetMessage(
+        error instanceof Error ? error.message : "Unable to apply the preset.",
+      );
+    } finally {
+      setIsUpdatingPreset(false);
+    }
+  }
+
+  async function handleDeletePreset(): Promise<void> {
+    const preset = presets.find(({ id }) => id === selectedPresetId);
+    if (!preset) {
+      setPresetMessage("Choose a saved preset first.");
+      return;
+    }
+    setIsUpdatingPreset(true);
+    try {
+      await deletePresetAssets(preset.id);
+      setPresets((current) => current.filter(({ id }) => id !== preset.id));
+      setSelectedPresetId("");
+      setPresetName("");
+      setIncludeTextInPreset(false);
+      setIncludeFontInPreset(false);
+      setPresetMessage(`Deleted “${preset.name}” and its saved files.`);
+    } catch (error: unknown) {
+      setPresetMessage(
+        error instanceof Error ? error.message : "Unable to delete the preset.",
+      );
+    } finally {
+      setIsUpdatingPreset(false);
+    }
+  }
+
+  function handleResetSettings(): void {
+    applyConfiguration(DEFAULT_WORKSHEET_CONFIGURATION);
+    setSelectedPresetId("");
+    setPresetName("");
+    setIncludeTextInPreset(false);
+    setIncludeFontInPreset(false);
+    setPresetMessage("Restored the recommended defaults.");
   }
 
   async function handleExport(): Promise<void> {
@@ -310,7 +550,16 @@ function App() {
             <p>Printable practice pages from plain text</p>
           </div>
         </div>
-        <span className="prototype-badge">Printable prototype</span>
+        <div className="header-actions">
+          <span className="global-drop-hint">
+            <UploadIcon />
+            <span>
+              <strong>Drag and drop anywhere</strong>
+              <small>.txt, .ttf, or .otf</small>
+            </span>
+          </span>
+          <span className="prototype-badge">Printable prototype</span>
+        </div>
       </header>
 
       <main className="workspace">
@@ -342,6 +591,9 @@ function App() {
                   >
                     Import .txt file
                   </button>
+                  <p className="drop-discovery-note">
+                    Or drag and drop a .txt file anywhere in this window.
+                  </p>
                   <input
                     ref={fileInputRef}
                     className="visually-hidden"
@@ -390,6 +642,132 @@ function App() {
 
               {activeStep === 2 ? (
                 <div className="panel-section-content" id="step-2-content">
+                  <fieldset className="preset-settings">
+                    <legend>Local presets</legend>
+                    <label className="form-field" htmlFor="saved-preset">
+                      <span>Saved preset</span>
+                      <select
+                        id="saved-preset"
+                        value={selectedPresetId}
+                        onChange={(event) => {
+                          const presetId = event.currentTarget.value;
+                          setSelectedPresetId(presetId);
+                          const preset = presets.find(
+                            ({ id }) => id === presetId,
+                          );
+                          setPresetName(preset?.name ?? "");
+                          setIncludeTextInPreset(Boolean(preset?.textAssetId));
+                          setIncludeFontInPreset(
+                            Boolean(preset?.customFontAssetId),
+                          );
+                          setPresetMessage(null);
+                        }}
+                      >
+                        <option value="">Choose a preset</option>
+                        {presets.map(({ id, name }) => (
+                          <option key={id} value={id}>
+                            {name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <div className="preset-actions">
+                      <button
+                        className="secondary-button compact-button"
+                        type="button"
+                        disabled={!selectedPresetId}
+                        onClick={() => void handleApplyPreset()}
+                      >
+                        Apply
+                      </button>
+                      <button
+                        className="text-button danger-text-button"
+                        type="button"
+                        disabled={!selectedPresetId}
+                        onClick={() => void handleDeletePreset()}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                    <label className="form-field" htmlFor="preset-name">
+                      <span>Preset name</span>
+                      <input
+                        id="preset-name"
+                        type="text"
+                        maxLength={60}
+                        value={presetName}
+                        placeholder="For example, Daily practice"
+                        onChange={(event) => {
+                          setPresetName(event.currentTarget.value);
+                          setPresetMessage(null);
+                        }}
+                      />
+                    </label>
+                    <div className="preset-file-options">
+                      <label className="checkbox-field compact-checkbox-field">
+                        <input
+                          type="checkbox"
+                          checked={includeTextInPreset}
+                          onChange={(event) =>
+                            setIncludeTextInPreset(event.currentTarget.checked)
+                          }
+                        />
+                        <span>
+                          <strong>Include current text</strong>
+                          <small>
+                            Save a private snapshot with this preset.
+                          </small>
+                        </span>
+                      </label>
+                      <label className="checkbox-field compact-checkbox-field">
+                        <input
+                          type="checkbox"
+                          checked={includeFontInPreset}
+                          disabled={
+                            !customFont || customFont.id !== selectedFontId
+                          }
+                          onChange={(event) =>
+                            setIncludeFontInPreset(event.currentTarget.checked)
+                          }
+                        />
+                        <span>
+                          <strong>Keep uploaded font</strong>
+                          <small>
+                            Available when the current font was uploaded.
+                          </small>
+                        </span>
+                      </label>
+                    </div>
+                    <div className="preset-actions">
+                      <button
+                        className="secondary-button compact-button"
+                        type="button"
+                        disabled={!presetName.trim() || isUpdatingPreset}
+                        onClick={() => void handleSavePreset()}
+                      >
+                        {isUpdatingPreset ? "Saving…" : "Save current"}
+                      </button>
+                      <button
+                        className="text-button"
+                        type="button"
+                        onClick={handleResetSettings}
+                      >
+                        Reset defaults
+                      </button>
+                    </div>
+                    <p className="preset-note">
+                      Presets and included files stay only in this app on this
+                      device. You are responsible for uploaded-font licensing.
+                    </p>
+                    <p
+                      className="preset-message"
+                      role="status"
+                      aria-live="polite"
+                    >
+                      {presetMessage}
+                    </p>
+                  </fieldset>
+
                   <div className="field-grid">
                     <div className="form-field">
                       <label htmlFor="worksheet-font">Handwriting font</label>
@@ -402,6 +780,9 @@ function App() {
                           setFontError(null);
                           const fontId = event.currentTarget.value;
                           setSelectedFontId(fontId);
+                          if (isBuiltInFontId(fontId)) {
+                            setIncludeFontInPreset(false);
+                          }
                           if (customFont?.id === fontId) {
                             setWorksheetFont(customFont);
                           }
@@ -447,6 +828,10 @@ function App() {
                       />
                       <small className="font-upload-note">
                         Used only on this device and embedded in the PDF.
+                      </small>
+                      <small className="drop-discovery-note font-drop-note">
+                        You can also drop a .ttf or .otf file anywhere in this
+                        window.
                       </small>
                     </div>
 
@@ -1017,6 +1402,17 @@ function formatMissingGlyphs(missingGlyphs: readonly MissingGlyph[]): string {
     ...visibleGlyphs,
     ...(remainingCount > 0 ? [`and ${remainingCount} more`] : []),
   ].join(", ");
+}
+
+function copyArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  return bytes.buffer.slice(
+    bytes.byteOffset,
+    bytes.byteOffset + bytes.byteLength,
+  ) as ArrayBuffer;
+}
+
+function getFontMimeType(fileName: string): string {
+  return fileName.toLowerCase().endsWith(".otf") ? "font/otf" : "font/ttf";
 }
 
 function DownloadIcon() {

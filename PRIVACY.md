@@ -8,6 +8,8 @@ The project is designed to process source text and custom fonts locally on the u
 
 Custom fonts are parsed locally and embedded directly into generated PDFs. They are not uploaded to this project or any remote service. Users are responsible for ensuring that they have permission to use and embed their selected font.
 
+Named presets normally store configuration only. Users may explicitly choose to include a snapshot of the current worksheet text or keep an uploaded font with a preset. Included files are stored in private browser/application storage on the current device, are not transmitted over the network, and are removed when the associated preset is deleted. Clearing the application's site data also removes these locally saved files.
+
 ## Network Activity
 
 The application may eventually provide links that open external websites, such as project documentation. Visiting an external website is governed by that site's privacy policy.

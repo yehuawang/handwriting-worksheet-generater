@@ -2,6 +2,14 @@
 
 All notable changes to Handwriting Worksheet Generator are documented here.
 
+## [Unreleased]
+
+### Added
+
+- Versioned local settings and named reusable presets.
+- Optional preset-scoped storage for worksheet text snapshots and uploaded fonts.
+- Persistent and contextual drag-and-drop guidance for text and font files.
+
 ## [0.1.0] - 2026-07-25
 
 ### Added

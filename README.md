@@ -128,7 +128,9 @@ The current printable prototype supports multi-page worksheets:
 9. Print the PDF using **Actual size** or **100% scale**.
 10. If the calibration mark is enabled, verify that it measures exactly 50 mm with a ruler.
 
-The prototype preserves line breaks, blank lines, leading spaces, and tabs. Long lines wrap within the printable area, retaining their indentation, and example/practice row pairs stay together across page boundaries. It warns when content exceeds the printable width or the selected font lacks characters used by the worksheet. Bundled and uploaded fonts use their own measured geometry in the preview and exported PDF. TTF/OTF files can also be dragged onto the application, and uploaded fonts remain local to the current application session. Saved presets remain planned work.
+The prototype preserves line breaks, blank lines, leading spaces, and tabs. Long lines wrap within the printable area, retaining their indentation, and example/practice row pairs stay together across page boundaries. It warns when content exceeds the printable width or the selected font lacks characters used by the worksheet. Bundled and uploaded fonts use their own measured geometry in the preview and exported PDF. TTF/OTF files can also be dragged onto the application, and uploaded fonts remain local to the current application session.
+
+Worksheet settings are remembered locally, and named presets can be saved, applied, and deleted from Step 2. With explicit checkboxes, a preset can also keep a private snapshot of the current text and an uploaded font in local application storage. These files remain on the current device and are removed when their preset is deleted.
 
 ## Project Status
 
