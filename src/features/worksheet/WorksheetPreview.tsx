@@ -3,6 +3,7 @@ import type { WorksheetPageModel } from "../../core/worksheet";
 interface WorksheetPreviewProps {
   readonly model: WorksheetPageModel;
   readonly fontSizeMm: number;
+  readonly fontFamily: string;
   readonly textColor: string;
   readonly showCalibration: boolean;
 }
@@ -17,6 +18,7 @@ const LINE_STYLES = {
 export function WorksheetPreview({
   model,
   fontSizeMm,
+  fontFamily,
   textColor,
   showCalibration,
 }: WorksheetPreviewProps) {
@@ -29,7 +31,7 @@ export function WorksheetPreview({
       className="worksheet-page"
       viewBox={`0 0 ${pageSize.widthMm} ${pageSize.heightMm}`}
       role="img"
-      aria-label="Preview of the first worksheet page"
+      aria-label={`Preview of worksheet page ${model.pageNumber}`}
     >
       <defs>
         <clipPath id="worksheet-content-clip">
@@ -80,7 +82,7 @@ export function WorksheetPreview({
               x={contentLeft}
               y={row.baselineYmm}
               fill={textColor}
-              fontFamily="Patrick Hand"
+              fontFamily={fontFamily}
               fontSize={fontSizeMm}
               xmlSpace="preserve"
             >

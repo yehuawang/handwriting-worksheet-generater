@@ -11,9 +11,11 @@ import {
 } from "./core";
 import { WorksheetPreview } from "./features/worksheet/WorksheetPreview";
 import {
-  loadPatrickHandFont,
+  BUILT_IN_FONTS,
+  loadBuiltInFont,
+  type BuiltInFontId,
   type LoadedWorksheetFont,
-} from "./fonts/patrick-hand";
+} from "./fonts/worksheet-fonts";
 import "./App.css";
 
 const SAMPLE_TEXT = `Handwriting practice
@@ -29,6 +31,8 @@ function App() {
   const [sourceFileName, setSourceFileName] = useState("sample.txt");
   const [worksheetFont, setWorksheetFont] =
     useState<LoadedWorksheetFont | null>(null);
+  const [selectedFontId, setSelectedFontId] =
+    useState<BuiltInFontId>("patrick-hand");
   const [fontError, setFontError] = useState<string | null>(null);
   const [settings, setSettings] = useState<WorksheetSettings>(
     DEFAULT_WORKSHEET_SETTINGS,
@@ -40,14 +44,26 @@ function App() {
   const [activePageIndex, setActivePageIndex] = useState(0);
 
   useEffect(() => {
-    void loadPatrickHandFont()
-      .then(setWorksheetFont)
+    let isCurrentSelection = true;
+
+    void loadBuiltInFont(selectedFontId)
+      .then((font) => {
+        if (isCurrentSelection) {
+          setWorksheetFont(font);
+        }
+      })
       .catch((error: unknown) => {
-        setFontError(
-          error instanceof Error ? error.message : "Unable to load the font.",
-        );
+        if (isCurrentSelection) {
+          setFontError(
+            error instanceof Error ? error.message : "Unable to load the font.",
+          );
+        }
       });
-  }, []);
+
+    return () => {
+      isCurrentSelection = false;
+    };
+  }, [selectedFontId]);
 
   const effectiveSettings = useMemo<WorksheetSettings>(() => {
     if (!worksheetFont) {
@@ -207,6 +223,33 @@ function App() {
             </div>
 
             <div className="field-grid">
+              <label className="form-field">
+                <span>Handwriting font</span>
+                <select
+                  className="font-select"
+                  style={{
+                    fontFamily: worksheetFont?.familyName ?? '"Patrick Hand"',
+                  }}
+                  value={selectedFontId}
+                  onChange={(event) => {
+                    setFontError(null);
+                    setSelectedFontId(
+                      event.currentTarget.value as BuiltInFontId,
+                    );
+                  }}
+                >
+                  {BUILT_IN_FONTS.map(({ id, familyName }) => (
+                    <option
+                      key={id}
+                      value={id}
+                      style={{ fontFamily: `"${familyName}"` }}
+                    >
+                      {familyName}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
               <label className="form-field">
                 <span>Guideline style</span>
                 <select
@@ -406,6 +449,7 @@ function App() {
               <WorksheetPreview
                 model={pageModel}
                 fontSizeMm={fontSizeMm}
+                fontFamily={worksheetFont?.familyName ?? "Patrick Hand"}
                 textColor={textColor}
                 showCalibration={showCalibration}
               />
@@ -422,21 +466,25 @@ function App() {
           {worksheetDocument && worksheetDocument.pages.length > 1 ? (
             <nav className="page-navigation" aria-label="Preview pages">
               <button
-                className="secondary-button compact-button"
+                className="page-arrow-button"
                 type="button"
+                aria-label="Previous page"
+                title="Previous page"
                 disabled={currentPageIndex === 0}
                 onClick={() =>
                   setActivePageIndex(Math.max(0, currentPageIndex - 1))
                 }
               >
-                Previous
+                <ChevronIcon direction="left" />
               </button>
               <span>
                 Page {currentPageIndex + 1} of {worksheetDocument.pages.length}
               </span>
               <button
-                className="secondary-button compact-button"
+                className="page-arrow-button"
                 type="button"
+                aria-label="Next page"
+                title="Next page"
                 disabled={
                   currentPageIndex === worksheetDocument.pages.length - 1
                 }
@@ -449,7 +497,7 @@ function App() {
                   )
                 }
               >
-                Next
+                <ChevronIcon direction="right" />
               </button>
             </nav>
           ) : null}
@@ -458,7 +506,7 @@ function App() {
             <div className="font-metrics">
               <div>
                 <span className="eyebrow">Font alignment</span>
-                <strong>Patrick Hand</strong>
+                <strong>{worksheetFont.familyName}</strong>
               </div>
               <dl>
                 <div>
@@ -532,6 +580,24 @@ function DownloadIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
+function ChevronIcon({ direction }: { readonly direction: "left" | "right" }) {
+  const path =
+    direction === "left" ? "M14.5 5 8 12l6.5 7" : "M9.5 5 16 12l-6.5 7";
+
+  return (
+    <svg className="page-chevron-icon" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d={path}
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2.25"
       />
     </svg>
   );

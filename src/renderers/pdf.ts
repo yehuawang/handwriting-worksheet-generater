@@ -3,7 +3,7 @@ import { PDFDocument, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 
 import { millimetresToPoints } from "../core/units";
 import type { WorksheetDocumentModel } from "../core/worksheet";
-import type { LoadedWorksheetFont } from "../fonts/patrick-hand";
+import type { LoadedWorksheetFont } from "../fonts/worksheet-fonts";
 
 interface ExportWorksheetPdfOptions {
   readonly worksheet: WorksheetDocumentModel;
