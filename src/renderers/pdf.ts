@@ -36,9 +36,7 @@ export async function createWorksheetPdfBytes({
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
 
-  const embeddedFont = await pdf.embedFont(worksheetFont.bytes, {
-    subset: true,
-  });
+  const embeddedFont = await pdf.embedFont(worksheetFont.bytes);
   for (const model of worksheet.pages) {
     const pageWidthPoints = millimetresToPoints(model.pageSize.widthMm);
     const pageHeightPoints = millimetresToPoints(model.pageSize.heightMm);

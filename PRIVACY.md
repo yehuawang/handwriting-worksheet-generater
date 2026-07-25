@@ -6,6 +6,8 @@ Handwriting Worksheet Generator does not include application telemetry, analytic
 
 The project is designed to process source text and custom fonts locally on the user's device. The current development application does not send worksheet content, file names, fonts, settings, or usage events to the project maintainers.
 
+Custom fonts are parsed locally and embedded directly into generated PDFs. They are not uploaded to this project or any remote service. Users are responsible for ensuring that they have permission to use and embed their selected font.
+
 ## Network Activity
 
 The application may eventually provide links that open external websites, such as project documentation. Visiting an external website is governed by that site's privacy policy.

@@ -10,10 +10,11 @@ import {
   type WorksheetSettings,
 } from "./core";
 import { WorksheetPreview } from "./features/worksheet/WorksheetPreview";
+import { loadCustomWorksheetFont } from "./fonts/custom-font";
 import {
   BUILT_IN_FONTS,
+  isBuiltInFontId,
   loadBuiltInFont,
-  type BuiltInFontId,
   type LoadedWorksheetFont,
 } from "./fonts/worksheet-fonts";
 import "./App.css";
@@ -27,12 +28,16 @@ Descending letters reach below: g j p q y`;
 
 function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fontInputRef = useRef<HTMLInputElement>(null);
   const [sourceText, setSourceText] = useState(SAMPLE_TEXT);
   const [sourceFileName, setSourceFileName] = useState("sample.txt");
   const [worksheetFont, setWorksheetFont] =
     useState<LoadedWorksheetFont | null>(null);
-  const [selectedFontId, setSelectedFontId] =
-    useState<BuiltInFontId>("patrick-hand");
+  const [selectedFontId, setSelectedFontId] = useState("patrick-hand");
+  const [customFont, setCustomFont] = useState<LoadedWorksheetFont | null>(
+    null,
+  );
+  const [isLoadingFont, setIsLoadingFont] = useState(false);
   const [fontError, setFontError] = useState<string | null>(null);
   const [settings, setSettings] = useState<WorksheetSettings>(
     DEFAULT_WORKSHEET_SETTINGS,
@@ -44,6 +49,10 @@ function App() {
   const [activePageIndex, setActivePageIndex] = useState(0);
 
   useEffect(() => {
+    if (!isBuiltInFontId(selectedFontId)) {
+      return;
+    }
+
     let isCurrentSelection = true;
 
     void loadBuiltInFont(selectedFontId)
@@ -64,6 +73,12 @@ function App() {
       isCurrentSelection = false;
     };
   }, [selectedFontId]);
+
+  const selectedFontFamily =
+    customFont?.id === selectedFontId
+      ? customFont.cssFamilyName
+      : (BUILT_IN_FONTS.find(({ id }) => id === selectedFontId)?.familyName ??
+        "Patrick Hand");
 
   const effectiveSettings = useMemo<WorksheetSettings>(() => {
     if (!worksheetFont) {
@@ -116,6 +131,28 @@ function App() {
     setSourceText(await file.text());
     setSourceFileName(file.name);
     setExportError(null);
+  }
+
+  async function handleCustomFont(file: File | undefined): Promise<void> {
+    if (!file) {
+      return;
+    }
+
+    setIsLoadingFont(true);
+    setFontError(null);
+
+    try {
+      const font = await loadCustomWorksheetFont(file);
+      setCustomFont(font);
+      setWorksheetFont(font);
+      setSelectedFontId(font.id);
+    } catch (error: unknown) {
+      setFontError(
+        error instanceof Error ? error.message : "Unable to load the font.",
+      );
+    } finally {
+      setIsLoadingFont(false);
+    }
   }
 
   async function handleExport(): Promise<void> {
@@ -223,19 +260,20 @@ function App() {
             </div>
 
             <div className="field-grid">
-              <label className="form-field">
-                <span>Handwriting font</span>
+              <div className="form-field">
+                <label htmlFor="worksheet-font">Handwriting font</label>
                 <select
+                  id="worksheet-font"
                   className="font-select"
-                  style={{
-                    fontFamily: worksheetFont?.familyName ?? '"Patrick Hand"',
-                  }}
+                  style={{ fontFamily: `"${selectedFontFamily}"` }}
                   value={selectedFontId}
                   onChange={(event) => {
                     setFontError(null);
-                    setSelectedFontId(
-                      event.currentTarget.value as BuiltInFontId,
-                    );
+                    const fontId = event.currentTarget.value;
+                    setSelectedFontId(fontId);
+                    if (customFont?.id === fontId) {
+                      setWorksheetFont(customFont);
+                    }
                   }}
                 >
                   {BUILT_IN_FONTS.map(({ id, familyName }) => (
@@ -247,8 +285,37 @@ function App() {
                       {familyName}
                     </option>
                   ))}
+                  {customFont ? (
+                    <option
+                      value={customFont.id}
+                      style={{ fontFamily: `"${customFont.cssFamilyName}"` }}
+                    >
+                      {customFont.familyName} (uploaded)
+                    </option>
+                  ) : null}
                 </select>
-              </label>
+                <button
+                  className="font-upload-button"
+                  type="button"
+                  disabled={isLoadingFont}
+                  onClick={() => fontInputRef.current?.click()}
+                >
+                  {isLoadingFont ? "Loading font…" : "Upload TTF or OTF"}
+                </button>
+                <input
+                  ref={fontInputRef}
+                  className="visually-hidden"
+                  type="file"
+                  accept=".ttf,.otf,font/ttf,font/otf"
+                  onChange={(event) => {
+                    void handleCustomFont(event.currentTarget.files?.[0]);
+                    event.currentTarget.value = "";
+                  }}
+                />
+                <small className="font-upload-note">
+                  Used only on this device and embedded in the PDF.
+                </small>
+              </div>
 
               <label className="form-field">
                 <span>Guideline style</span>
@@ -449,7 +516,7 @@ function App() {
               <WorksheetPreview
                 model={pageModel}
                 fontSizeMm={fontSizeMm}
-                fontFamily={worksheetFont?.familyName ?? "Patrick Hand"}
+                fontFamily={worksheetFont?.cssFamilyName ?? "Patrick Hand"}
                 textColor={textColor}
                 showCalibration={showCalibration}
               />

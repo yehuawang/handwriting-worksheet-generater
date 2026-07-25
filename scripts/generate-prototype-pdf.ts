@@ -10,10 +10,8 @@ import {
   extractFontMetrics,
   getFontSizeForWritingHeight,
 } from "../src/core";
-import type {
-  BuiltInFontId,
-  LoadedWorksheetFont,
-} from "../src/fonts/worksheet-fonts";
+import { type LoadedWorksheetFont } from "../src/fonts/worksheet-fonts";
+import { BUILT_IN_FONTS } from "../src/fonts/font-definitions";
 import { createWorksheetPdfBytes } from "../src/renderers/pdf";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -26,32 +24,9 @@ const sourceText = Array.from(
 
 await mkdir(outputDirectory, { recursive: true });
 
-const fonts: readonly {
-  id: BuiltInFontId;
-  familyName: string;
-  relativePath: string;
-}[] = [
-  {
-    id: "patrick-hand",
-    familyName: "Patrick Hand",
-    relativePath: "public/fonts/patrick-hand/PatrickHand-Regular.ttf",
-  },
-  {
-    id: "architects-daughter",
-    familyName: "Architects Daughter",
-    relativePath:
-      "public/fonts/architects-daughter/ArchitectsDaughter-Regular.ttf",
-  },
-  {
-    id: "gloria-hallelujah",
-    familyName: "Gloria Hallelujah",
-    relativePath: "public/fonts/gloria-hallelujah/GloriaHallelujah.ttf",
-  },
-];
-
-for (const definition of fonts) {
+for (const definition of BUILT_IN_FONTS) {
   const fontBytes = await readFile(
-    resolve(projectRoot, definition.relativePath),
+    resolve(projectRoot, `public${definition.url}`),
   );
   const buffer = fontBytes.buffer.slice(
     fontBytes.byteOffset,
@@ -62,6 +37,8 @@ for (const definition of fonts) {
   const worksheetFont: LoadedWorksheetFont = {
     id: definition.id,
     familyName: definition.familyName,
+    cssFamilyName: definition.familyName,
+    source: "built-in",
     bytes: new Uint8Array(fontBytes),
     font,
     metrics,

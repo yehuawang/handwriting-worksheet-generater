@@ -12,8 +12,104 @@
 }
 
 @font-face {
-  font-family: "Gloria Hallelujah";
-  src: url("/fonts/gloria-hallelujah/GloriaHallelujah.ttf") format("truetype");
+  font-family: "Allura";
+  src: url("/fonts/allura/Allura-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Amita";
+  src: url("/fonts/amita/Amita-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Arizonia";
+  src: url("/fonts/arizonia/Arizonia-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Bad Script";
+  src: url("/fonts/bad-script/BadScript-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Charm";
+  src: url("/fonts/charm/Charm-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Chilanka";
+  src: url("/fonts/chilanka/Chilanka-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Corinthia";
+  src: url("/fonts/corinthia/Corinthia-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Damion";
+  src: url("/fonts/damion/Damion-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Dancing Script";
+  src: url("/fonts/dancing-script/DancingScript-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Delius";
+  src: url("/fonts/delius/Delius-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Italianno";
+  src: url("/fonts/italianno/Italianno-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Niconne";
+  src: url("/fonts/niconne/Niconne-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Pangolin";
+  src: url("/fonts/pangolin/Pangolin-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Rochester";
+  src: url("/fonts/rochester/Rochester-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Sacramento";
+  src: url("/fonts/sacramento/Sacramento-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Satisfy";
+  src: url("/fonts/satisfy/Satisfy-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Yellowtail";
+  src: url("/fonts/yellowtail/Yellowtail-Regular.ttf") format("truetype");
   font-display: swap;
 }
 
@@ -176,7 +272,8 @@ textarea:focus-visible {
 }
 
 .field-label,
-.form-field > span:first-child {
+.form-field > span:first-child,
+.form-field > label:first-child {
   display: block;
   margin-bottom: 7px;
   color: #475166;
@@ -225,6 +322,36 @@ textarea {
 
 .form-field select {
   padding: 0 34px 0 11px;
+}
+
+.font-upload-button {
+  width: 100%;
+  min-height: 34px;
+  margin-top: 7px;
+  border: 1px solid #b8d7d1;
+  border-radius: 7px;
+  color: var(--accent);
+  background: #f4faf8;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.font-upload-button:hover:not(:disabled) {
+  color: var(--accent-hover);
+  background: var(--accent-soft);
+}
+
+.font-upload-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.font-upload-note {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
 }
 
 .number-control {

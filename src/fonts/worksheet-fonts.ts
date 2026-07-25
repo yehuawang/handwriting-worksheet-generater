@@ -4,45 +4,19 @@ import {
   extractFontMetrics,
   type WorksheetFontMetrics,
 } from "../core/font-metrics";
+import { BUILT_IN_FONTS, type BuiltInFontId } from "./font-definitions";
 
-export type BuiltInFontId =
-  "patrick-hand" | "architects-daughter" | "gloria-hallelujah";
-
-export interface BuiltInFontDefinition {
-  readonly id: BuiltInFontId;
-  readonly familyName: string;
-  readonly url: string;
-  readonly attribution: string;
-}
+export * from "./font-definitions";
 
 export interface LoadedWorksheetFont {
-  readonly id: BuiltInFontId;
+  readonly id: string;
   readonly familyName: string;
+  readonly cssFamilyName: string;
+  readonly source: "built-in" | "custom";
   readonly bytes: Uint8Array;
   readonly font: Font;
   readonly metrics: WorksheetFontMetrics;
 }
-
-export const BUILT_IN_FONTS: readonly BuiltInFontDefinition[] = [
-  {
-    id: "patrick-hand",
-    familyName: "Patrick Hand",
-    url: "/fonts/patrick-hand/PatrickHand-Regular.ttf",
-    attribution: "Patrick Wagesreiter",
-  },
-  {
-    id: "architects-daughter",
-    familyName: "Architects Daughter",
-    url: "/fonts/architects-daughter/ArchitectsDaughter-Regular.ttf",
-    attribution: "Kimberly Geswein",
-  },
-  {
-    id: "gloria-hallelujah",
-    familyName: "Gloria Hallelujah",
-    url: "/fonts/gloria-hallelujah/GloriaHallelujah.ttf",
-    attribution: "Kimberly Geswein",
-  },
-];
 
 const fontPromises = new Map<BuiltInFontId, Promise<LoadedWorksheetFont>>();
 
@@ -73,10 +47,12 @@ export function loadBuiltInFont(
       return {
         id: definition.id,
         familyName: definition.familyName,
+        cssFamilyName: definition.familyName,
+        source: "built-in",
         bytes: new Uint8Array(buffer),
         font,
         metrics: extractFontMetrics(font),
-      };
+      } satisfies LoadedWorksheetFont;
     })
     .catch((error: unknown) => {
       fontPromises.delete(fontId);
@@ -85,4 +61,8 @@ export function loadBuiltInFont(
 
   fontPromises.set(fontId, fontPromise);
   return fontPromise;
+}
+
+export function isBuiltInFontId(fontId: string): fontId is BuiltInFontId {
+  return BUILT_IN_FONTS.some(({ id }) => id === fontId);
 }
