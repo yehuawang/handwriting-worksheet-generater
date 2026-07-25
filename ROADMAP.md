@@ -28,11 +28,11 @@ The roadmap communicates direction rather than promising dates. Priorities may c
 - [x] Local custom TTF/OTF upload and validation.
 - [x] Practice rows.
 - [x] Page size, orientation, margins, header, and footer.
-- Overflow and missing-glyph warnings.
+- [x] Overflow and missing-glyph warnings.
 
 ## Milestone 3 — Desktop Release
 
-- Native file-open and save dialogs.
+- [x] Native file-open and save dialogs.
 - Local presets and settings.
 - Windows installer and portable build.
 - Application identity, icons, signing, and release automation.

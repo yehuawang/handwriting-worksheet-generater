@@ -11,12 +11,18 @@ import {
 } from "./core";
 import { WorksheetPreview } from "./features/worksheet/WorksheetPreview";
 import { loadCustomWorksheetFont } from "./fonts/custom-font";
+import { findMissingGlyphs, type MissingGlyph } from "./fonts/glyph-coverage";
 import {
   BUILT_IN_FONTS,
   isBuiltInFontId,
   loadBuiltInFont,
   type LoadedWorksheetFont,
 } from "./fonts/worksheet-fonts";
+import {
+  isDesktopRuntime,
+  openDesktopTextDocument,
+  saveDesktopPdf,
+} from "./platform/desktop-files";
 import "./App.css";
 
 const SAMPLE_TEXT = `Handwriting practice
@@ -126,6 +132,35 @@ function App() {
     Math.max(0, (worksheetDocument?.pages.length ?? 1) - 1),
   );
   const pageModel = worksheetDocument?.pages[currentPageIndex] ?? null;
+  const missingGlyphs = useMemo(
+    () =>
+      worksheetFont
+        ? findMissingGlyphs(sourceText, worksheetFont.font)
+        : ([] satisfies readonly MissingGlyph[]),
+    [sourceText, worksheetFont],
+  );
+
+  async function handleImportClick(): Promise<void> {
+    if (!isDesktopRuntime()) {
+      fileInputRef.current?.click();
+      return;
+    }
+
+    try {
+      const document = await openDesktopTextDocument();
+      if (document) {
+        setSourceText(document.text);
+        setSourceFileName(document.fileName);
+        setExportError(null);
+      }
+    } catch (error: unknown) {
+      setExportError(
+        error instanceof Error
+          ? error.message
+          : "Unable to open the text file.",
+      );
+    }
+  }
 
   async function handleTextFile(file: File | undefined): Promise<void> {
     if (!file) {
@@ -173,15 +208,24 @@ function App() {
     setExportError(null);
 
     try {
-      const { exportWorksheetPdf } = await import("./renderers/pdf");
-      await exportWorksheetPdf({
+      const pdfRenderer = await import("./renderers/pdf");
+      const options = {
         worksheet: worksheetDocument,
         worksheetFont,
         fontSizeMm,
         textColor,
-        fileName: sourceFileName,
         showCalibration,
-      });
+      };
+
+      if (isDesktopRuntime()) {
+        const bytes = await pdfRenderer.createWorksheetPdfBytes(options);
+        await saveDesktopPdf(bytes, pdfRenderer.getPdfFileName(sourceFileName));
+      } else {
+        await pdfRenderer.exportWorksheetPdf({
+          ...options,
+          fileName: sourceFileName,
+        });
+      }
     } catch (error: unknown) {
       setExportError(
         error instanceof Error ? error.message : "PDF export failed.",
@@ -235,7 +279,7 @@ function App() {
               <button
                 className="secondary-button compact-button"
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
+                onClick={() => void handleImportClick()}
               >
                 Import .txt
               </button>
@@ -641,6 +685,7 @@ function App() {
             horizontalOverflowCount={
               worksheetDocument?.horizontalOverflowCount ?? 0
             }
+            missingGlyphs={missingGlyphs}
           />
 
           <div className="preview-stage">
@@ -740,16 +785,21 @@ function StatusMessages({
   fontError,
   exportError,
   horizontalOverflowCount,
+  missingGlyphs,
 }: {
   readonly fontError: string | null;
   readonly exportError: string | null;
   readonly horizontalOverflowCount: number;
+  readonly missingGlyphs: readonly MissingGlyph[];
 }) {
   const messages = [
     fontError,
     exportError,
     horizontalOverflowCount > 0
       ? `${horizontalOverflowCount} line${horizontalOverflowCount === 1 ? "" : "s"} could not fit within the printable width.`
+      : null,
+    missingGlyphs.length > 0
+      ? `The selected font cannot display ${formatMissingGlyphs(missingGlyphs)}. Choose another font or remove those characters.`
       : null,
   ].filter((message): message is string => Boolean(message));
 
@@ -767,6 +817,18 @@ function StatusMessages({
       ))}
     </div>
   );
+}
+
+function formatMissingGlyphs(missingGlyphs: readonly MissingGlyph[]): string {
+  const visibleGlyphs = missingGlyphs
+    .slice(0, 6)
+    .map(({ character, codePoint }) => `"${character}" (${codePoint})`);
+  const remainingCount = missingGlyphs.length - visibleGlyphs.length;
+
+  return [
+    ...visibleGlyphs,
+    ...(remainingCount > 0 ? [`and ${remainingCount} more`] : []),
+  ].join(", ");
 }
 
 function DownloadIcon() {

@@ -213,7 +213,7 @@ function hexToRgb(hex: string) {
   );
 }
 
-function getPdfFileName(sourceFileName: string): string {
+export function getPdfFileName(sourceFileName: string): string {
   const baseName = sourceFileName.replace(/\.[^/.]+$/, "") || "worksheet";
   return `${baseName}-worksheet.pdf`;
 }

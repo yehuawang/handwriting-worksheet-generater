@@ -116,17 +116,17 @@ Desktop application bundles are platform-specific. Build Windows installers on W
 The current printable prototype supports multi-page worksheets:
 
 1. Start the web or desktop development application.
-2. Select **Import .txt** to load a plain-text file, or edit the text directly.
+2. Select **Import .txt** to load a plain-text file, or edit the text directly. The desktop app uses the operating system's native file picker.
 3. Choose baseline-only, three-line, or four-line guidelines.
 4. Choose a bundled handwriting font or upload a local TTF/OTF font, then set the writing height, gap between rows, example color, and optional practice rows.
 5. Choose US Letter or A4, portrait or landscape orientation, and a page margin.
 6. Customize or hide the header and footer. Use `{fileName}`, `{page}`, and `{pages}` to insert document values automatically.
 7. Review each page with the preview navigation.
-8. Select **Download PDF** to export the complete worksheet.
+8. Select **Download PDF** to export the complete worksheet. The desktop app opens a native save dialog; the web app uses the browser download.
 9. Print the PDF using **Actual size** or **100% scale**.
 10. If the calibration mark is enabled, verify that it measures exactly 50 mm with a ruler.
 
-The prototype preserves line breaks, blank lines, leading spaces, and tabs. Long lines wrap within the printable area, retaining their indentation, and example/practice row pairs stay together across page boundaries. Bundled and uploaded fonts use their own measured geometry in the preview and exported PDF. Uploaded fonts remain local to the current application session. Saved presets remain planned work.
+The prototype preserves line breaks, blank lines, leading spaces, and tabs. Long lines wrap within the printable area, retaining their indentation, and example/practice row pairs stay together across page boundaries. It warns when content exceeds the printable width or the selected font lacks characters used by the worksheet. Bundled and uploaded fonts use their own measured geometry in the preview and exported PDF. Uploaded fonts remain local to the current application session. Saved presets remain planned work.
 
 ## Project Status
 
