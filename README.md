@@ -119,13 +119,14 @@ The current printable prototype supports multi-page worksheets:
 2. Select **Import .txt** to load a plain-text file, or edit the text directly.
 3. Choose baseline-only, three-line, or four-line guidelines.
 4. Choose a bundled handwriting font or upload a local TTF/OTF font, then set the writing height, gap between rows, example color, and optional practice rows.
-5. Choose US Letter or A4 in portrait or landscape orientation.
-6. Review each page with the preview navigation.
-7. Select **Download PDF** to export the complete worksheet.
-8. Print the PDF using **Actual size** or **100% scale**.
-9. If the calibration mark is enabled, verify that it measures exactly 50 mm with a ruler.
+5. Choose US Letter or A4, portrait or landscape orientation, and a page margin.
+6. Customize or hide the header and footer. Use `{fileName}`, `{page}`, and `{pages}` to insert document values automatically.
+7. Review each page with the preview navigation.
+8. Select **Download PDF** to export the complete worksheet.
+9. Print the PDF using **Actual size** or **100% scale**.
+10. If the calibration mark is enabled, verify that it measures exactly 50 mm with a ruler.
 
-The prototype preserves line breaks, blank lines, leading spaces, and tabs. Long lines wrap within the printable area, retaining their indentation, and example/practice row pairs stay together across page boundaries. Bundled and uploaded fonts use their own measured geometry in the preview and exported PDF. Uploaded fonts remain local to the current application session. Headers, footers, and saved presets remain planned work.
+The prototype preserves line breaks, blank lines, leading spaces, and tabs. Long lines wrap within the printable area, retaining their indentation, and example/practice row pairs stay together across page boundaries. Bundled and uploaded fonts use their own measured geometry in the preview and exported PDF. Uploaded fonts remain local to the current application session. Saved presets remain planned work.
 
 ## Project Status
 

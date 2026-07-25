@@ -312,6 +312,7 @@ textarea {
 }
 
 .form-field select,
+.form-field > input[type="text"],
 .number-control {
   width: 100%;
   height: 40px;
@@ -322,6 +323,42 @@ textarea {
 
 .form-field select {
   padding: 0 34px 0 11px;
+}
+
+.form-field > input[type="text"] {
+  padding: 0 11px;
+  color: #354056;
+}
+
+.page-label-settings {
+  margin: 18px 0 0;
+  padding: 14px 12px 12px;
+  border: 1px solid #dce2e9;
+  border-radius: 8px;
+}
+
+.page-label-settings legend {
+  padding: 0 5px;
+  color: #475166;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.page-label-settings .checkbox-field {
+  margin-top: 8px;
+}
+
+.label-field-grid,
+.footer-label-field {
+  margin-top: 12px;
+}
+
+.token-hint {
+  display: block;
+  margin-top: 11px;
+  color: #7a8494;
+  font-size: 10px;
+  line-height: 1.4;
 }
 
 .font-upload-button {

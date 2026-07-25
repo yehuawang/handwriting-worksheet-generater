@@ -17,7 +17,28 @@ export interface WorksheetSettings {
   readonly marginMm: number;
   readonly tabWidth: number;
   readonly practiceRows: 0 | 1;
+  readonly pageLabels: PageLabelSettings;
   readonly guidelines: GuidelineSettings;
+}
+
+export interface PageLabelSettings {
+  readonly showHeader: boolean;
+  readonly headerLeft: string;
+  readonly headerRight: string;
+  readonly showFooter: boolean;
+  readonly footerCenter: string;
+}
+
+export interface WorksheetMetadata {
+  readonly fileName: string;
+}
+
+export interface WorksheetPageLabels {
+  readonly headerLeft: string;
+  readonly headerRight: string;
+  readonly footerCenter: string;
+  readonly headerBaselineYmm: number;
+  readonly footerBaselineYmm: number;
 }
 
 export interface WorksheetRow {
@@ -37,6 +58,10 @@ export interface WorksheetPageModel {
   readonly pageSize: PageSize;
   readonly contentWidthMm: number;
   readonly contentHeightMm: number;
+  readonly contentLeftMm: number;
+  readonly contentTopMm: number;
+  readonly contentBottomMm: number;
+  readonly labels: WorksheetPageLabels;
   readonly guidelineGeometry: GuidelineGeometry;
   readonly rows: readonly WorksheetRow[];
   readonly horizontalOverflowCount: number;
@@ -63,6 +88,13 @@ export const DEFAULT_WORKSHEET_SETTINGS: WorksheetSettings = {
   marginMm: 12.7,
   tabWidth: 4,
   practiceRows: 1,
+  pageLabels: {
+    showHeader: true,
+    headerLeft: "{fileName}",
+    headerRight: "Date: __________",
+    showFooter: true,
+    footerCenter: "Page {page} of {pages}",
+  },
   guidelines: {
     writingHeightMm: 6,
     xHeightRatio: 0.55,
@@ -76,12 +108,21 @@ export function createWorksheetDocumentModel(
   sourceText: string,
   settings: WorksheetSettings,
   measureText: MeasureText,
+  metadata: WorksheetMetadata = { fileName: "worksheet.txt" },
 ): WorksheetDocumentModel {
   validateSettings(settings);
 
   const pageSize = getOrientedPageSize(settings.paper, settings.orientation);
   const contentWidthMm = pageSize.widthMm - settings.marginMm * 2;
-  const contentHeightMm = pageSize.heightMm - settings.marginMm * 2;
+  const labelReservationMm = 9;
+  const contentTopMm =
+    settings.marginMm +
+    (settings.pageLabels.showHeader ? labelReservationMm : 0);
+  const contentBottomMm =
+    pageSize.heightMm -
+    settings.marginMm -
+    (settings.pageLabels.showFooter ? labelReservationMm : 0);
+  const contentHeightMm = contentBottomMm - contentTopMm;
   const guidelineGeometry = createGuidelineGeometry(settings.guidelines);
   const sourceLines = getSourceLines(sourceText, settings.tabWidth);
   const layoutLines: LayoutTextLine[] = sourceLines.flatMap(
@@ -95,7 +136,7 @@ export function createWorksheetDocumentModel(
       ),
   );
   const pageRows: WorksheetRow[][] = [[]];
-  let cursorYmm = settings.marginMm;
+  let cursorYmm = contentTopMm;
 
   for (const line of layoutLines) {
     const practiceRowsForLine =
@@ -106,11 +147,11 @@ export function createWorksheetDocumentModel(
       settings.guidelines.rowGapMm * (rowsRequired - 1);
 
     if (
-      cursorYmm + groupHeightMm > pageSize.heightMm - settings.marginMm &&
+      cursorYmm + groupHeightMm > contentBottomMm &&
       pageRows[pageRows.length - 1].length > 0
     ) {
       pageRows.push([]);
-      cursorYmm = settings.marginMm;
+      cursorYmm = contentTopMm;
     }
 
     pageRows[pageRows.length - 1].push(
@@ -142,6 +183,7 @@ export function createWorksheetDocumentModel(
     }
   }
 
+  const pageCount = pageRows.length;
   const pages = pageRows.map((rows, index): WorksheetPageModel => {
     const horizontalOverflowCount = rows.filter(
       ({ overflowsHorizontally }) => overflowsHorizontally,
@@ -152,6 +194,17 @@ export function createWorksheetDocumentModel(
       pageSize,
       contentWidthMm,
       contentHeightMm,
+      contentLeftMm: settings.marginMm,
+      contentTopMm,
+      contentBottomMm,
+      labels: createPageLabels(
+        settings.pageLabels,
+        metadata,
+        index + 1,
+        pageCount,
+        settings.marginMm,
+        pageSize.heightMm,
+      ),
       guidelineGeometry,
       rows,
       horizontalOverflowCount,
@@ -167,6 +220,45 @@ export function createWorksheetDocumentModel(
       0,
     ),
   };
+}
+
+function createPageLabels(
+  settings: PageLabelSettings,
+  metadata: WorksheetMetadata,
+  pageNumber: number,
+  pageCount: number,
+  marginMm: number,
+  pageHeightMm: number,
+): WorksheetPageLabels {
+  const values = {
+    fileName: metadata.fileName,
+    page: String(pageNumber),
+    pages: String(pageCount),
+  };
+
+  return {
+    headerLeft: settings.showHeader
+      ? resolvePageLabel(settings.headerLeft, values)
+      : "",
+    headerRight: settings.showHeader
+      ? resolvePageLabel(settings.headerRight, values)
+      : "",
+    footerCenter: settings.showFooter
+      ? resolvePageLabel(settings.footerCenter, values)
+      : "",
+    headerBaselineYmm: marginMm + 3,
+    footerBaselineYmm: pageHeightMm - marginMm + 3,
+  };
+}
+
+export function resolvePageLabel(
+  template: string,
+  values: Readonly<Record<"fileName" | "page" | "pages", string>>,
+): string {
+  return template.replace(
+    /\{(fileName|page|pages)\}/g,
+    (_, token: keyof typeof values) => values[token],
+  );
 }
 
 function createRow(
@@ -209,7 +301,10 @@ function validateSettings(settings: WorksheetSettings): void {
   const geometry = createGuidelineGeometry(settings.guidelines);
   if (
     geometry.rowHeightMm * (1 + settings.practiceRows) >
-    pageSize.heightMm - settings.marginMm * 2
+    pageSize.heightMm -
+      settings.marginMm * 2 -
+      (settings.pageLabels.showHeader ? 9 : 0) -
+      (settings.pageLabels.showFooter ? 9 : 0)
   ) {
     throw new RangeError("The selected row geometry does not fit on the page.");
   }

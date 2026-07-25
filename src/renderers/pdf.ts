@@ -41,8 +41,10 @@ export async function createWorksheetPdfBytes({
     const pageWidthPoints = millimetresToPoints(model.pageSize.widthMm);
     const pageHeightPoints = millimetresToPoints(model.pageSize.heightMm);
     const page = pdf.addPage([pageWidthPoints, pageHeightPoints]);
-    const contentLeftMm = (model.pageSize.widthMm - model.contentWidthMm) / 2;
+    const contentLeftMm = model.contentLeftMm;
     const contentRightMm = contentLeftMm + model.contentWidthMm;
+
+    drawPageLabels(page, pageHeightPoints, model, embeddedFont, textColor);
 
     for (const row of model.rows) {
       for (const guideline of model.guidelineGeometry.guidelines) {
@@ -90,6 +92,51 @@ export async function createWorksheetPdfBytes({
   }
 
   return pdf.save();
+}
+
+function drawPageLabels(
+  page: PDFPage,
+  pageHeightPoints: number,
+  model: WorksheetDocumentModel["pages"][number],
+  font: PDFFont,
+  textColor: string,
+): void {
+  const size = millimetresToPoints(3);
+  const color = hexToRgb(textColor);
+  const { labels } = model;
+
+  if (labels.headerLeft) {
+    page.drawText(labels.headerLeft, {
+      x: millimetresToPoints(model.contentLeftMm),
+      y: pageHeightPoints - millimetresToPoints(labels.headerBaselineYmm),
+      size,
+      font,
+      color,
+    });
+  }
+
+  if (labels.headerRight) {
+    const width = font.widthOfTextAtSize(labels.headerRight, size);
+    page.drawText(labels.headerRight, {
+      x:
+        millimetresToPoints(model.contentLeftMm + model.contentWidthMm) - width,
+      y: pageHeightPoints - millimetresToPoints(labels.headerBaselineYmm),
+      size,
+      font,
+      color,
+    });
+  }
+
+  if (labels.footerCenter) {
+    const width = font.widthOfTextAtSize(labels.footerCenter, size);
+    page.drawText(labels.footerCenter, {
+      x: millimetresToPoints(model.pageSize.widthMm / 2) - width / 2,
+      y: pageHeightPoints - millimetresToPoints(labels.footerBaselineYmm),
+      size,
+      font,
+      color,
+    });
+  }
 }
 
 export async function exportWorksheetPdf({

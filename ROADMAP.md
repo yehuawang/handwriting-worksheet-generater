@@ -26,8 +26,8 @@ The roadmap communicates direction rather than promising dates. Priorities may c
 - [x] Paginated preview and PDF export with indentation-aware wrapping.
 - [x] Built-in open-licensed handwriting font selection.
 - [x] Local custom TTF/OTF upload and validation.
-- Practice rows.
-- Page size, orientation, margins, header, and footer.
+- [x] Practice rows.
+- [x] Page size, orientation, margins, header, and footer.
 - Overflow and missing-glyph warnings.
 
 ## Milestone 3 — Desktop Release

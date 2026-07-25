@@ -23,7 +23,7 @@ export function WorksheetPreview({
   showCalibration,
 }: WorksheetPreviewProps) {
   const { pageSize, rows, guidelineGeometry } = model;
-  const contentLeft = (pageSize.widthMm - model.contentWidthMm) / 2;
+  const contentLeft = model.contentLeftMm;
   const contentRight = contentLeft + model.contentWidthMm;
 
   return (
@@ -37,9 +37,9 @@ export function WorksheetPreview({
         <clipPath id="worksheet-content-clip">
           <rect
             x={contentLeft}
-            y="0"
+            y={model.contentTopMm}
             width={model.contentWidthMm}
-            height={pageSize.heightMm}
+            height={model.contentHeightMm}
           />
         </clipPath>
       </defs>
@@ -51,6 +51,8 @@ export function WorksheetPreview({
         height={pageSize.heightMm}
         fill="#ffffff"
       />
+
+      <PageLabels model={model} fontFamily={fontFamily} textColor={textColor} />
 
       {rows.flatMap((row) =>
         guidelineGeometry.guidelines.map((guideline) => {
@@ -98,6 +100,54 @@ export function WorksheetPreview({
         />
       ) : null}
     </svg>
+  );
+}
+
+function PageLabels({
+  model,
+  fontFamily,
+  textColor,
+}: {
+  readonly model: WorksheetPageModel;
+  readonly fontFamily: string;
+  readonly textColor: string;
+}) {
+  const { labels, contentLeftMm, contentWidthMm } = model;
+  const contentRightMm = contentLeftMm + contentWidthMm;
+  const commonProps = {
+    fill: textColor,
+    fontFamily,
+    fontSize: 3,
+  };
+
+  return (
+    <g aria-label="Page header and footer">
+      {labels.headerLeft ? (
+        <text x={contentLeftMm} y={labels.headerBaselineYmm} {...commonProps}>
+          {labels.headerLeft}
+        </text>
+      ) : null}
+      {labels.headerRight ? (
+        <text
+          x={contentRightMm}
+          y={labels.headerBaselineYmm}
+          textAnchor="end"
+          {...commonProps}
+        >
+          {labels.headerRight}
+        </text>
+      ) : null}
+      {labels.footerCenter ? (
+        <text
+          x={model.pageSize.widthMm / 2}
+          y={labels.footerBaselineYmm}
+          textAnchor="middle"
+          {...commonProps}
+        >
+          {labels.footerCenter}
+        </text>
+      ) : null}
+    </g>
   );
 }
 

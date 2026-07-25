@@ -55,8 +55,11 @@ for (const definition of BUILT_IN_FONTS) {
     settings.guidelines.writingHeightMm,
     metrics,
   );
-  const worksheet = createWorksheetDocumentModel(sourceText, settings, (text) =>
-    font.getAdvanceWidth(text, fontSizeMm),
+  const worksheet = createWorksheetDocumentModel(
+    sourceText,
+    settings,
+    (text) => font.getAdvanceWidth(text, fontSizeMm),
+    { fileName: "handwriting-practice.txt" },
   );
   const pdfBytes = await createWorksheetPdfBytes({
     worksheet,

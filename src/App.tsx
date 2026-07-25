@@ -107,10 +107,19 @@ function App() {
       return null;
     }
 
-    return createWorksheetDocumentModel(sourceText, effectiveSettings, (text) =>
-      worksheetFont.font.getAdvanceWidth(text, fontSizeMm),
+    return createWorksheetDocumentModel(
+      sourceText,
+      effectiveSettings,
+      (text) => worksheetFont.font.getAdvanceWidth(text, fontSizeMm),
+      { fileName: sourceFileName },
     );
-  }, [effectiveSettings, fontSizeMm, sourceText, worksheetFont]);
+  }, [
+    effectiveSettings,
+    fontSizeMm,
+    sourceFileName,
+    sourceText,
+    worksheetFont,
+  ]);
 
   const currentPageIndex = Math.min(
     activePageIndex,
@@ -188,6 +197,15 @@ function App() {
     setSettings((current) => ({
       ...current,
       guidelines: { ...current.guidelines, ...values },
+    }));
+  }
+
+  function updatePageLabels(
+    values: Partial<WorksheetSettings["pageLabels"]>,
+  ): void {
+    setSettings((current) => ({
+      ...current,
+      pageLabels: { ...current.pageLabels, ...values },
     }));
   }
 
@@ -449,7 +467,121 @@ function App() {
                   <option value="landscape">Landscape</option>
                 </select>
               </label>
+
+              <label className="form-field">
+                <span>Page margin</span>
+                <span className="number-control">
+                  <input
+                    type="number"
+                    min="5"
+                    max="30"
+                    step="0.5"
+                    value={settings.marginMm}
+                    onChange={(event) => {
+                      const marginMm = Number(event.currentTarget.value);
+                      if (marginMm >= 5 && marginMm <= 30) {
+                        setSettings((current) => ({
+                          ...current,
+                          marginMm,
+                        }));
+                      }
+                    }}
+                  />
+                  <span>mm</span>
+                </span>
+              </label>
             </div>
+
+            <fieldset className="page-label-settings">
+              <legend>Header and footer</legend>
+
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  checked={settings.pageLabels.showHeader}
+                  onChange={(event) =>
+                    updatePageLabels({
+                      showHeader: event.currentTarget.checked,
+                    })
+                  }
+                />
+                <span>
+                  <strong>Show header</strong>
+                  <small>Reserve space above the writing rows.</small>
+                </span>
+              </label>
+
+              {settings.pageLabels.showHeader ? (
+                <div className="field-grid label-field-grid">
+                  <label className="form-field" htmlFor="header-left">
+                    <span>Header left</span>
+                    <input
+                      id="header-left"
+                      type="text"
+                      value={settings.pageLabels.headerLeft}
+                      onChange={(event) =>
+                        updatePageLabels({
+                          headerLeft: event.currentTarget.value,
+                        })
+                      }
+                    />
+                  </label>
+                  <label className="form-field" htmlFor="header-right">
+                    <span>Header right</span>
+                    <input
+                      id="header-right"
+                      type="text"
+                      value={settings.pageLabels.headerRight}
+                      onChange={(event) =>
+                        updatePageLabels({
+                          headerRight: event.currentTarget.value,
+                        })
+                      }
+                    />
+                  </label>
+                </div>
+              ) : null}
+
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  checked={settings.pageLabels.showFooter}
+                  onChange={(event) =>
+                    updatePageLabels({
+                      showFooter: event.currentTarget.checked,
+                    })
+                  }
+                />
+                <span>
+                  <strong>Show footer</strong>
+                  <small>Reserve space below the writing rows.</small>
+                </span>
+              </label>
+
+              {settings.pageLabels.showFooter ? (
+                <label
+                  className="form-field footer-label-field"
+                  htmlFor="footer-center"
+                >
+                  <span>Footer center</span>
+                  <input
+                    id="footer-center"
+                    type="text"
+                    value={settings.pageLabels.footerCenter}
+                    onChange={(event) =>
+                      updatePageLabels({
+                        footerCenter: event.currentTarget.value,
+                      })
+                    }
+                  />
+                </label>
+              ) : null}
+
+              <small className="token-hint">
+                Available placeholders: {"{fileName}"}, {"{page}"}, and{" "}
+                {"{pages}"}.
+              </small>
+            </fieldset>
 
             <label className="checkbox-field calibration-option">
               <input

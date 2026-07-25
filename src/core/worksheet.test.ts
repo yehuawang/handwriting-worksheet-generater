@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   createWorksheetDocumentModel,
   DEFAULT_WORKSHEET_SETTINGS,
+  resolvePageLabel,
 } from "./worksheet";
 
 describe("worksheet document layout", () => {
@@ -20,13 +21,40 @@ describe("worksheet document layout", () => {
     expect(page.rows[0]).toMatchObject({
       kind: "example",
       text: "First",
-      topYmm: 12.7,
-      baselineYmm: 18.7,
+      topYmm: 21.7,
+      baselineYmm: 27.7,
     });
     expect(page.rows[2]).toMatchObject({
       kind: "example",
       text: "  Second",
     });
+  });
+
+  it("reserves writing space and resolves page-label placeholders", () => {
+    const document = createWorksheetDocumentModel(
+      Array.from({ length: 50 }, (_, index) => `Line ${index}`).join("\n"),
+      DEFAULT_WORKSHEET_SETTINGS,
+      measureText,
+      { fileName: "lesson.txt" },
+    );
+
+    expect(document.pages[0].contentTopMm).toBe(21.7);
+    expect(document.pages[0].contentBottomMm).toBeCloseTo(257.7);
+    expect(document.pages[0].labels).toMatchObject({
+      headerLeft: "lesson.txt",
+      headerRight: "Date: __________",
+      footerCenter: `Page 1 of ${document.pages.length}`,
+    });
+  });
+
+  it("supports reusable placeholders in custom labels", () => {
+    expect(
+      resolvePageLabel("{fileName} - {page}/{pages}", {
+        fileName: "practice.txt",
+        page: "2",
+        pages: "4",
+      }),
+    ).toBe("practice.txt - 2/4");
   });
 
   it("reports horizontal overflow", () => {
