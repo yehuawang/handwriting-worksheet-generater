@@ -228,6 +228,14 @@ jobs:
           path: release-assets
           merge-multiple: true
 
+      - name: Flatten release artifacts
+        shell: bash
+        run: |
+          find release-assets -mindepth 2 -type f -print0 | while IFS= read -r -d '' asset; do
+            mv "$asset" "release-assets/$(basename "$asset")"
+          done
+          find release-assets -mindepth 1 -type d -empty -delete
+
       - name: Generate SHA-256 checksums
         working-directory: release-assets
         run: find . -maxdepth 1 -type f ! -name CHECKSUMS-SHA256.txt -printf '%f\0' | sort -z | xargs -0 sha256sum > CHECKSUMS-SHA256.txt
@@ -243,8 +251,12 @@ jobs:
           RELEASE_TAG: ${{ needs.validate.outputs.tag }}
           RELEASE_VERSION: ${{ needs.validate.outputs.version }}
         run: |
-          gh release create "$RELEASE_TAG" release-assets/* \
-            --repo "$GITHUB_REPOSITORY" \
-            --draft \
-            --generate-notes \
-            --title "Handwriting Worksheet Generator v$RELEASE_VERSION"
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" release-assets/* --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$RELEASE_TAG" release-assets/* \
+              --repo "$GITHUB_REPOSITORY" \
+              --draft \
+              --generate-notes \
+              --title "Handwriting Worksheet Generator v$RELEASE_VERSION"
+          fi
