@@ -18,4 +18,4 @@ These requests do not modify or restrict the MIT License. Users are not required
 
 ## Third-Party Assets
 
-Bundled fonts, icons, and other third-party assets may have their own licenses. Their notices will be stored alongside the assets or in a future third-party notices file. Contributors must verify redistribution and embedding rights before adding a font.
+Bundled fonts, icons, and other third-party assets may have their own licenses. See [THIRD_PARTY_NOTICES.md](./THIRD_PARTY_NOTICES.md). Contributors must verify redistribution and embedding rights before adding a font.

@@ -48,6 +48,7 @@ npm run tauri dev
 
    ```bash
    npm run check
+   npm run pdf:sample
    cargo fmt --manifest-path src-tauri/Cargo.toml -- --check
    cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
    cargo check --manifest-path src-tauri/Cargo.toml

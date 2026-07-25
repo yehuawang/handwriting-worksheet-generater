@@ -113,23 +113,23 @@ Desktop application bundles are platform-specific. Build Windows installers on W
 
 ## Using the Software
 
-> User instructions will be added as the first deliverable product is developed.
+The current printable prototype supports one worksheet page:
 
-<!--
-Planned topics:
-- Opening or importing a .txt file
-- Editing source text
-- Selecting or uploading a handwriting font
-- Configuring guidelines and writing dimensions
-- Adding practice rows
-- Configuring paper, margins, headers, and footers
-- Previewing the worksheet
-- Exporting a PDF and printing at actual size
--->
+1. Start the web or desktop development application.
+2. Select **Import .txt** to load a plain-text file, or edit the text directly.
+3. Choose baseline-only, three-line, or four-line guidelines.
+4. Set the writing height, gap between rows, example color, and optional practice rows.
+5. Choose US Letter or A4 in portrait or landscape orientation.
+6. Review the live first-page preview.
+7. Select **Download first-page PDF**.
+8. Print the PDF using **Actual size** or **100% scale**.
+9. If the calibration mark is enabled, verify that it measures exactly 50 mm with a ruler.
+
+The prototype preserves line breaks, blank lines, leading spaces, and tabs. It reports content that exceeds the first page or printable width. Automatic wrapping, pagination, headers, footers, custom fonts, and saved presets remain planned work.
 
 ## Project Status
 
-The project is in its foundation and prototype phase. The React/Tauri application runs, continuous integration is configured, and the first tested worksheet-core primitives cover physical units, paper sizes, and guideline geometry. The next milestone is a font-metric and print-accuracy prototype.
+The first printable prototype is implemented. It imports text, calculates font-aware guideline geometry, displays a live first-page preview, and exports a physically sized PDF with an embedded open-licensed handwriting font. Multi-page layout and the remaining product controls are under development.
 
 ## Contributing
 

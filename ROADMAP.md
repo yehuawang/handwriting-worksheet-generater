@@ -9,17 +9,17 @@ The roadmap communicates direction rather than promising dates. Priorities may c
 - [x] Unit testing, linting, formatting, and CI.
 - [x] Contribution and community standards.
 - [x] Local-first privacy and voluntary adoption policies.
-- [ ] Font-metric and print-accuracy research spike.
-- [ ] Initial UI information architecture.
+- [x] Font-metric and print-accuracy research spike.
+- [x] Initial UI information architecture.
 
 ## Milestone 1 — Printable Prototype
 
-- Import or paste plain text.
-- Preserve line breaks, blank lines, spaces, and indentation.
-- Render baseline, three-line, and four-line guidelines.
-- Configure writing height and row spacing.
-- Preview one Letter or A4 page.
-- Export one print-accurate PDF page.
+- [x] Import or paste plain text.
+- [x] Preserve line breaks, blank lines, spaces, and indentation.
+- [x] Render baseline, three-line, and four-line guidelines.
+- [x] Configure writing height and row spacing.
+- [x] Preview one Letter or A4 page.
+- [x] Export one print-accurate PDF page.
 
 ## Milestone 2 — Usable Worksheet Generator
 
