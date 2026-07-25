@@ -1,0 +1,53 @@
+name: Share your use
+description: Voluntarily tell the community how you use Handwriting Worksheet Generator.
+title: "[Adoption]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for sharing! This report is entirely optional. Do not include student names, worksheet contents, private educational information, customer data, or proprietary font files.
+  - type: checkboxes
+    attributes:
+      label: Consent and safety
+      options:
+        - label: I am authorized to share the information in this report publicly.
+          required: true
+        - label: This report contains no private student, customer, or document information.
+          required: true
+        - label: The maintainers may summarize this report in USERS.md.
+          required: true
+  - type: dropdown
+    attributes:
+      label: Type of use
+      options:
+        - Personal handwriting practice
+        - Parent or caregiver
+        - Teacher or educator
+        - School or educational organization
+        - Accessibility support
+        - Software development or integration
+        - Other
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Public display name
+      description: A name, organization, GitHub username, or anonymous description.
+      placeholder: An elementary-school teacher in Ontario
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: How are you using the project?
+      description: Share a short, non-sensitive description of your use case.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Optional public link
+      description: A website or public profile you are authorized to share.
+      placeholder: https://example.com
+  - type: textarea
+    attributes:
+      label: What would make the project more useful?
+      description: Optional feedback can help shape the roadmap.

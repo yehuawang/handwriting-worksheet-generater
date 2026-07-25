@@ -264,16 +264,16 @@ Exit criterion: a non-developer can run the app offline and export a worksheet.
 
 ## 11. Risks
 
-| Risk | Mitigation |
-| --- | --- |
-| Fonts align differently | Read metrics, store per-font defaults, and allow manual offsets |
-| Preview differs from print | Use one physical-unit page model |
-| Custom font cannot be embedded | Validate and show an actionable warning |
-| Long or indented lines overflow | Offer wrapping policy and overflow warnings |
-| Web and desktop behavior diverges | Share the layout and renderer |
-| Printer scaling alters dimensions | Provide calibration and actual-size instructions |
-| Font licensing prevents bundling | Use open-licensed fonts and retain notices |
-| Too many controls overwhelm users | Use presets with an expandable Advanced section |
+| Risk                              | Mitigation                                                      |
+| --------------------------------- | --------------------------------------------------------------- |
+| Fonts align differently           | Read metrics, store per-font defaults, and allow manual offsets |
+| Preview differs from print        | Use one physical-unit page model                                |
+| Custom font cannot be embedded    | Validate and show an actionable warning                         |
+| Long or indented lines overflow   | Offer wrapping policy and overflow warnings                     |
+| Web and desktop behavior diverges | Share the layout and renderer                                   |
+| Printer scaling alters dimensions | Provide calibration and actual-size instructions                |
+| Font licensing prevents bundling  | Use open-licensed fonts and retain notices                      |
+| Too many controls overwhelm users | Use presets with an expandable Advanced section                 |
 
 ## 12. Initial Definition of Done
 

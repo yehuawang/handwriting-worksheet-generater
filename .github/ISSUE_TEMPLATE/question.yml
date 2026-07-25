@@ -1,0 +1,22 @@
+name: Question
+description: Ask a development or usage question not answered by the documentation.
+title: "[Question]: "
+labels:
+  - question
+body:
+  - type: checkboxes
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked the README, contribution guide, and existing issues.
+          required: true
+  - type: textarea
+    attributes:
+      label: Question
+      description: Explain what you are trying to accomplish and where you are stuck.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Relevant context
+      description: Include commands, sanitized output, operating system, or application version where relevant.

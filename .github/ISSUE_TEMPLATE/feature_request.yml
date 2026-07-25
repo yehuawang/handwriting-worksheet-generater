@@ -1,0 +1,36 @@
+name: Feature proposal
+description: Propose a new worksheet, usability, accessibility, or developer feature.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the need before prescribing an implementation. Teaching experience and examples of existing workflows are especially helpful.
+  - type: checkboxes
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and the roadmap for this idea.
+          required: true
+  - type: textarea
+    attributes:
+      label: Problem
+      description: Who has this problem, and what are they currently unable to do?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Proposed outcome
+      description: What should become possible? Mockups or examples are welcome.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Alternatives considered
+      description: Describe workarounds or different approaches you considered.
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: Include accessibility, privacy, printing, or compatibility considerations.
