@@ -113,6 +113,99 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Edu NSW ACT Foundation";
+  src: url("/fonts/edu-nsw-act-foundation/EduNSWACTFoundation-Regular.ttf")
+    format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Edu VIC WA NT Hand";
+  src: url("/fonts/edu-vic-wa-nt-hand/EduVICWANTHand-Regular.ttf")
+    format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "League Script";
+  src: url("/fonts/league-script/LeagueScript-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playwrite BE VLG Guides";
+  src: url("/fonts/playwrite-be-vlg-guides/PlaywriteBEVLGGuides-Regular.ttf")
+    format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playwrite CA ExtraLight";
+  src: url("/fonts/playwrite-ca/PlaywriteCA-ExtraLight.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playwrite DE Grund Guides";
+  src: url("/fonts/playwrite-de-grund-guides/PlaywriteDEGrundGuides-Regular.ttf")
+    format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playwrite ID ExtraLight";
+  src: url("/fonts/playwrite-id/PlaywriteID-ExtraLight.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playwrite MX ExtraLight";
+  src: url("/fonts/playwrite-mx/PlaywriteMX-ExtraLight.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playwrite NZ Basic ExtraLight";
+  src: url("/fonts/playwrite-nz-basic/PlaywriteNZBasic-ExtraLight.ttf")
+    format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playwrite NZ Basic Guides";
+  src: url("/fonts/playwrite-nz-basic-guides/PlaywriteNZBasicGuides-Regular.ttf")
+    format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playwrite NZ Guides";
+  src: url("/fonts/playwrite-nz-guides/PlaywriteNZGuides-Regular.ttf")
+    format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playwrite PT ExtraLight";
+  src: url("/fonts/playwrite-pt/PlaywritePT-ExtraLight.ttf") format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playwrite RO Guides";
+  src: url("/fonts/playwrite-ro-guides/PlaywriteROGuides-Regular.ttf")
+    format("truetype");
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Playwrite US Trad ExtraLight";
+  src: url("/fonts/playwrite-us-trad/PlaywriteUSTrad-ExtraLight.ttf")
+    format("truetype");
+  font-display: swap;
+}
+
 :root {
   color: #172033;
   background: #edf1f5;

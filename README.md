@@ -115,6 +115,8 @@ Desktop application bundles are platform-specific. Build Windows installers on W
 
 See [docs/DISTRIBUTION.md](./docs/DISTRIBUTION.md) for application identity, installer customization, signing, notarization, and release-verification requirements.
 
+See [docs/BUNDLED_FONTS.md](./docs/BUNDLED_FONTS.md) for bundled font weights, attribution, and license details.
+
 ## Using the Software
 
 The current printable prototype supports multi-page worksheets:
