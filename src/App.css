@@ -195,15 +195,8 @@ textarea:focus-visible {
 .brand-mark {
   width: 44px;
   height: 44px;
-  display: grid;
-  place-items: center;
-  color: #173e3a;
-  background: #f5c982;
-  border-radius: 12px 12px 12px 4px;
-  font-family: "Patrick Hand", cursive;
-  font-size: 22px;
-  font-weight: 700;
-  transform: rotate(-2deg);
+  display: block;
+  flex: 0 0 auto;
 }
 
 .brand h1,

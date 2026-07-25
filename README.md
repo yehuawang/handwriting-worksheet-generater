@@ -113,6 +113,8 @@ cargo check --manifest-path src-tauri/Cargo.toml
 
 Desktop application bundles are platform-specific. Build Windows installers on Windows and macOS application bundles on macOS.
 
+See [docs/DISTRIBUTION.md](./docs/DISTRIBUTION.md) for application identity, installer customization, signing, notarization, and release-verification requirements.
+
 ## Using the Software
 
 The current printable prototype supports multi-page worksheets:

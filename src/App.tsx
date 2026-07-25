@@ -542,9 +542,7 @@ function App() {
     >
       <header className="app-header">
         <div className="brand">
-          <span className="brand-mark" aria-hidden="true">
-            HW
-          </span>
+          <img className="brand-mark" src="/brand-mark.svg" alt="" />
           <div>
             <h1>Handwriting Worksheet Generator</h1>
             <p>Printable practice pages from plain text</p>

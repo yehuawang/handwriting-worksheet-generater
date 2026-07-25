@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="164" height="314" viewBox="0 0 164 314">
+  <rect width="164" height="314" fill="#173e3a"/>
+  <path d="M0 0h164v314H0z" fill="url(#wash)"/>
+  <path d="M54 42h56c13.8 0 25 11.2 25 25v48c0 13.8-11.2 25-25 25H39c-5.5 0-10-4.5-10-10V67c0-13.8 11.2-25 25-25Z" fill="#f5c982" transform="rotate(-2 82 91)"/>
+  <path d="M52 68v48m0-24h23m0-24v48m12-48 8 47 11-34 11 34 7-48" fill="none" stroke="#173e3a" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
+  <text x="82" y="184" text-anchor="middle" fill="#f7fbfa" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700">Handwriting</text>
+  <text x="82" y="205" text-anchor="middle" fill="#f7fbfa" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700">Worksheet</text>
+  <text x="82" y="226" text-anchor="middle" fill="#f7fbfa" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700">Generator</text>
+  <text x="82" y="265" text-anchor="middle" fill="#bad0cc" font-family="Segoe UI, Arial, sans-serif" font-size="10">Create. Print. Practice.</text>
+  <defs>
+    <linearGradient id="wash" x1="0" y1="0" x2="164" y2="314" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" stop-opacity=".06"/>
+      <stop offset=".55" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+</svg>

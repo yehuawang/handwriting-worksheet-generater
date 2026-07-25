@@ -35,8 +35,8 @@ The roadmap communicates direction rather than promising dates. Priorities may c
 - [x] Native file-open and save dialogs.
 - [x] Versioned local settings and named reusable presets.
 - [x] Windows installer and portable build.
-- [ ] Final application identity and platform-specific icon audit.
-- [ ] Customized Windows installer branding and metadata.
+- [x] Final application identity and platform-specific icon audit.
+- [x] Customized Windows installer branding and metadata.
 - [ ] Windows code signing and reputation guidance to reduce SmartScreen warnings.
 - [ ] macOS application bundle, installer appearance, signing, and notarization.
 - [ ] Automated, reproducible release builds with checksums and release notes.

@@ -27,12 +27,34 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "publisher": "Yehua Wang",
+    "homepage": "https://github.com/yehuawang/handwriting-worksheet-generater",
+    "copyright": "Copyright © 2026 Yehua Wang",
+    "license": "MIT",
+    "licenseFile": "../LICENSE",
+    "category": "Education",
+    "shortDescription": "Create printable handwriting worksheets from plain-text files.",
+    "longDescription": "A free, open-source desktop application for creating customizable, print-ready handwriting practice worksheets from plain-text files.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "wix": {
+        "upgradeCode": "0bb5490b-1cd1-5087-8cb4-1d4b01e21437",
+        "bannerPath": "installer-assets/wix-banner.bmp",
+        "dialogImagePath": "installer-assets/wix-dialog.bmp"
+      },
+      "nsis": {
+        "headerImage": "installer-assets/nsis-header.bmp",
+        "sidebarImage": "installer-assets/nsis-sidebar.bmp",
+        "installerIcon": "icons/icon.ico",
+        "uninstallerIcon": "icons/icon.ico",
+        "installMode": "currentUser"
+      }
+    }
   }
 }

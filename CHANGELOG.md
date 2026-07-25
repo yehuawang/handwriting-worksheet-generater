@@ -9,6 +9,8 @@ All notable changes to Handwriting Worksheet Generator are documented here.
 - Versioned local settings and named reusable presets.
 - Optional preset-scoped storage for worksheet text snapshots and uploaded fonts.
 - Persistent and contextual drag-and-drop guidance for text and font files.
+- Unified browser, Windows, and macOS application icons using the project logo.
+- Branded NSIS/MSI installer artwork, stable upgrade identity, and complete bundle metadata.
 
 ## [0.1.0] - 2026-07-25
 

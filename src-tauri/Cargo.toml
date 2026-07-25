@@ -2,7 +2,10 @@
 name = "handwriting-worksheet-generator"
 version = "0.1.0"
 description = "Create printable handwriting worksheets from plain-text files."
-authors = []
+authors = ["Yehua Wang"]
+license = "MIT"
+homepage = "https://github.com/yehuawang/handwriting-worksheet-generater"
+repository = "https://github.com/yehuawang/handwriting-worksheet-generater"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
