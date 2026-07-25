@@ -1,7 +1,7 @@
 {
   "name": "handwriting-worksheet-generator",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "license": "MIT",
   "type": "module",
   "scripts": {
@@ -13,6 +13,7 @@
     "lint": "eslint . --max-warnings 0",
     "pdf:sample": "tsx scripts/generate-prototype-pdf.ts",
     "preview": "vite preview",
+    "release:verify": "node scripts/verify-release-version.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",

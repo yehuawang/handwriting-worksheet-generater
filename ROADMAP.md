@@ -37,9 +37,9 @@ The roadmap communicates direction rather than promising dates. Priorities may c
 - [x] Windows installer and portable build.
 - [x] Final application identity and platform-specific icon audit.
 - [x] Customized Windows installer branding and metadata.
-- [ ] Windows code signing and reputation guidance to reduce SmartScreen warnings.
-- [ ] macOS application bundle, installer appearance, signing, and notarization.
-- [ ] Automated, reproducible release builds with checksums and release notes.
+- [x] Windows code signing and reputation guidance to reduce SmartScreen warnings.
+- [x] macOS application bundle, installer appearance, signing, and notarization.
+- [x] Automated, reproducible release builds with checksums and release notes.
 
 ## Milestone 4 — Quality and Accessibility
 

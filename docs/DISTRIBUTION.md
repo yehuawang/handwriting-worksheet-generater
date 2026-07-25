@@ -11,7 +11,7 @@ Desktop bundles must be built on their target operating system. The application 
 - Category: Education
 - Canonical project page: <https://github.com/yehuawang/handwriting-worksheet-generater>
 
-The browser favicon, Windows executable and installer icons, Windows tile assets, and macOS `.icns` are generated from `public/favicon.svg`. Run the following command after intentionally changing the source artwork:
+The browser favicon, Windows executable and installer icons, Windows tile assets, and macOS `.icns` are generated from `public/brand-mark.svg`. Run the following command after intentionally changing the source artwork:
 
 ```bash
 npm run tauri icon public/brand-mark.svg
@@ -29,7 +29,7 @@ npm run tauri build
 
 This produces an NSIS setup executable, an MSI installer, and the unpackaged executable under `src-tauri/target/release`. The NSIS and MSI interfaces use the branded artwork in `src-tauri/installer-assets`.
 
-Current development builds are unsigned. Windows SmartScreen may therefore identify the publisher as unknown or warn that the application is uncommon. Public trust warnings cannot be removed by changing installer text or icons.
+Local development builds are unsigned. Windows SmartScreen may therefore identify the publisher as unknown or warn that the application is uncommon. Public trust warnings cannot be removed by changing installer text or icons. The release workflow signs builds automatically when its Windows certificate secrets are configured.
 
 Before publishing signed Windows builds:
 
@@ -44,7 +44,7 @@ SmartScreen reputation is controlled by Microsoft and may take time to establish
 
 ## macOS bundles
 
-Build macOS artifacts on macOS. The generated `src-tauri/icons/icon.icns` already contains the approved application artwork.
+Build macOS artifacts on macOS. The generated `src-tauri/icons/icon.icns` contains the approved application artwork, and the DMG uses the branded installation background in `src-tauri/installer-assets`.
 
 For public distribution outside the Mac App Store:
 
@@ -56,6 +56,10 @@ For public distribution outside the Mac App Store:
 6. Test installation on a clean Mac without development certificates.
 
 Ad-hoc signing can support development builds but does not remove Gatekeeper trust prompts. Apple credentials, certificates, private keys, and app-specific passwords must never be committed to the repository.
+
+## Automated releases
+
+Version tags matching `v*` start `.github/workflows/release.yml`. The workflow validates synchronized version metadata, runs project checks, builds Windows x64 and both macOS architectures, generates SHA-256 checksums, creates GitHub artifact attestations, and prepares a draft release with generated notes. See [RELEASING.md](./RELEASING.md) for secrets, release steps, and verification commands.
 
 ## Release verification
 

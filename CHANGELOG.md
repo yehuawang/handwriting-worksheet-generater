@@ -4,6 +4,8 @@ All notable changes to Handwriting Worksheet Generator are documented here.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-25
+
 ### Added
 
 - Versioned local settings and named reusable presets.
@@ -12,6 +14,12 @@ All notable changes to Handwriting Worksheet Generator are documented here.
 - Unified browser, Windows, and macOS application icons using the project logo.
 - Branded NSIS/MSI installer artwork, stable upgrade identity, and complete bundle metadata.
 - Fourteen OFL-licensed educational and regional Playwrite handwriting fonts.
+- Reproducible Windows and macOS release workflow with optional platform signing, macOS notarization, checksums, provenance attestations, and draft release notes.
+- Branded macOS DMG installer layout and release-maintainer documentation.
+
+### Notes
+
+- Windows and macOS installers in this release are unsigned. Platform security warnings are expected until trusted signing and notarization credentials are configured.
 
 ## [0.1.0] - 2026-07-25
 
