@@ -181,12 +181,17 @@ jobs:
 
       - name: Build macOS bundle
         if: runner.os == 'macOS'
+        shell: bash
         env:
           APPLE_SIGNING_IDENTITY: ${{ steps.apple-signing.outputs.identity }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: npm run tauri build -- --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+        run: |
+          if [[ "$APPLE_SIGNING_IDENTITY" == "-" ]]; then
+            unset APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID
+          fi
+          npm run tauri build -- --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
 
       - name: Upload Windows installers
         if: runner.os == 'Windows'
